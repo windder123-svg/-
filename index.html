@@ -1,30 +1,23 @@
 <!doctype html>
 <html lang="ko">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#101a31">
-  <title>아정당 매장 실적 현황</title>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#101a31">
+  <title>아정당 매장 실적 현황</title><script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     :root{color-scheme:light;--ink:#17233c;--muted:#78849b;--line:#dce5f1;--paper:#f5f8fc;--blue:#625cf0;--teal:#12b89a;--orange:#ff861b;font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo",sans-serif;color:var(--ink);background:var(--paper)}
-    *{box-sizing:border-box}body{margin:0;min-width:320px;background:var(--paper)}.topline{height:5px;background:#101a31}.toolbar{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:12px max(18px,calc((100vw - 1204px)/2));background:#fff;border-bottom:1px solid var(--line)}.brand{font-size:14px;font-weight:780;color:#202d48}.brand small{display:block;margin-top:3px;color:var(--muted);font-size:10px;font-weight:450}.toolbar-controls{display:flex;align-items:center;gap:8px}.person-label{font-size:11px;color:#66748c}select,button{font:inherit}select{color:#24314d;border:1px solid #d5deeb;border-radius:8px;background:#fff;padding:8px 11px;font-size:11px;min-width:135px}button{cursor:pointer;border:1px solid #cad7ff;border-radius:20px;color:#514dec;background:#f5f6ff;padding:7px 11px;font-size:10px;white-space:nowrap}.status-inline{font-size:10px;color:#66748c;white-space:nowrap}main{max-width:1240px;margin:0 auto;padding:16px 18px 34px}.summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:0 0 14px}.metric,.section{background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:0 2px 6px #20385c08}.metric{min-height:66px;padding:12px 15px;display:flex;align-items:center;justify-content:space-between;gap:10px}.metric-label{font-size:10px;color:#66748c;margin-bottom:4px}.metric-value{font-size:20px;line-height:1.15;font-weight:760;color:#18233c}.metric-value.blue{color:var(--blue)}.metric-value.green{color:#07866c}.metric-value.orange{color:#e77a00}.metric-unit{font-size:10px;font-weight:550;margin-left:3px;color:#6e7c94}.metric-icon{width:33px;height:33px;display:grid;place-items:center;border-radius:11px;background:#f0f1ff;color:var(--blue);font-size:16px;flex:0 0 auto}.metric-icon.green{background:#e9fbf5;color:#00a57f}.metric-icon.orange{background:#fff7e8;color:#ed8500}.section{margin-bottom:14px;padding:15px 16px 16px;scroll-margin-top:12px}.section-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:26px;padding-bottom:10px;margin-bottom:13px;border-bottom:1px solid #e8eef6}.section-title{margin:0;font-size:12px;font-weight:750}.section-note{margin-left:5px;color:#8a96aa;font-size:9px;font-weight:450}.charts{display:grid;grid-template-columns:1fr 1fr;gap:14px}.chart-card{min-width:0;padding:12px;border:1px solid #dce5f1;border-radius:10px;background:#f8fafc}.chart-title{margin:0 0 5px;text-align:center;color:#36445f;font-size:10px;font-weight:700}.chart-wrap{height:205px;position:relative}.rank-controls{display:flex;align-items:center;gap:4px;padding:3px;border:1px solid #e0e7f1;border-radius:9px;background:#f8fafd}.rank-button{padding:5px 8px;border:0;border-radius:6px;color:#68758d;background:transparent;font-size:9px;white-space:nowrap}.rank-button.active{color:#514dec;background:#fff;box-shadow:0 1px 4px #21314a18;font-weight:700}.ranking-layout{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(220px,.9fr);gap:18px;align-items:center}.rank-chart-wrap{height:205px}.rank-list{display:grid;gap:7px;padding:10px;border:1px solid #dce5f1;border-radius:10px;background:#f8fafc}.rank-item{display:grid;grid-template-columns:25px 1fr auto auto;align-items:center;gap:7px;padding:7px 8px;background:#fff;border:1px solid #e6ebf3;border-radius:7px;font-size:10px}.rank-badge{width:20px;text-align:center;padding:3px 0;border-radius:5px;color:#fff;background:#9aa8bd;font-weight:750}.rank-item:nth-child(1) .rank-badge{background:#ff9a00}.rank-item:nth-child(2) .rank-badge{background:#8d9db5}.rank-item:nth-child(3) .rank-badge{background:#ef8d45}.rank-name{font-weight:700;color:#283650}.rank-main{color:#07866c;font-weight:750;font-variant-numeric:tabular-nums}.rank-sub{color:#8591a5;font-size:9px;white-space:nowrap}.table-wrap{overflow-x:auto}table{width:100%;border-collapse:collapse;min-width:620px}th,td{padding:9px 11px;border-bottom:1px solid #edf1f6;text-align:left;white-space:nowrap;font-size:10px}th{color:#758198;background:#f8fafc;font-size:9px;font-weight:700}td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}tbody tr:last-child td{border-bottom:0}.status{padding:9px 2px 0;color:#7e8ba0;font-size:10px}.empty{color:var(--muted);text-align:center;padding:18px;font-size:11px}.error{margin:10px 0;color:#a93333;background:#fff1f0;border:1px solid #ffd3cf;border-radius:8px;padding:10px;font-size:11px}@media(max-width:760px){.toolbar{padding:10px;align-items:flex-start}.toolbar-controls{flex-wrap:wrap;justify-content:flex-end}.status-inline{width:100%;text-align:right}.summary{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}main{padding:12px 10px 24px}.metric{min-height:61px;padding:10px}.metric-value{font-size:17px}.charts,.ranking-layout{grid-template-columns:1fr}.chart-wrap,.rank-chart-wrap{height:190px}.section{padding:12px 11px}.section-heading{align-items:flex-start;flex-wrap:wrap}}@media(max-width:420px){.brand{font-size:12px}.person-label{display:none}select{min-width:120px}.rank-button{padding:5px;font-size:8px}.rank-list{padding:7px}}
+    *{box-sizing:border-box}body{margin:0;min-width:320px;background:var(--paper)}.topline{height:5px;background:#101a31}.toolbar{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:12px max(18px,calc((100vw - 1204px)/2));background:#fff;border-bottom:1px solid var(--line)}.brand{font-size:14px;font-weight:780;color:#202d48}.brand small{display:block;margin-top:3px;color:var(--muted);font-size:10px;font-weight:450}.toolbar-controls{display:flex;align-items:center;gap:8px}.person-label{font-size:11px;color:#66748c}select,button{font:inherit}select{color:#24314d;border:1px solid #d5deeb;border-radius:8px;background:#fff;padding:8px 11px;font-size:11px;min-width:135px}button{cursor:pointer;border:1px solid #cad7ff;border-radius:20px;color:#514dec;background:#f5f6ff;padding:7px 11px;font-size:10px;white-space:nowrap}.status-inline{font-size:10px;color:#66748c;white-space:nowrap}
+    main{max-width:1240px;margin:0 auto;padding:16px 18px 34px}.summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:0 0 14px}.metric,.section{background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:0 2px 6px #20385c08}.metric{min-height:66px;padding:12px 15px;display:flex;align-items:center;justify-content:space-between;gap:10px}.metric-label{font-size:10px;color:#66748c;margin-bottom:4px}.metric-value{font-size:20px;line-height:1.15;font-weight:760;color:#18233c}.metric-value.blue{color:var(--blue)}.metric-value.green{color:#07866c}.metric-value.orange{color:#e77a00}.metric-unit{font-size:10px;font-weight:550;margin-left:3px;color:#6e7c94}.metric-icon{width:33px;height:33px;display:grid;place-items:center;border-radius:11px;background:#f0f1ff;color:var(--blue);font-size:16px;flex:0 0 auto}.metric-icon.green{background:#e9fbf5;color:#00a57f}.metric-icon.orange{background:#fff7e8;color:#ed8500}
+    .section{margin-bottom:14px;padding:15px 16px 16px;scroll-margin-top:12px}.section-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:26px;padding-bottom:10px;margin-bottom:13px;border-bottom:1px solid #e8eef6}.section-title{margin:0;font-size:12px;font-weight:750}.section-note{margin-left:5px;color:#8a96aa;font-size:9px;font-weight:450}.charts{display:grid;grid-template-columns:1fr 1fr;gap:14px}.chart-card{min-width:0;padding:12px;border:1px solid #dce5f1;border-radius:10px;background:#f8fafc}.chart-title{margin:0 0 5px;text-align:center;color:#36445f;font-size:10px;font-weight:700}.chart-wrap{height:205px;position:relative}
+    .rank-controls{display:flex;align-items:center;gap:4px;padding:3px;border:1px solid #e0e7f1;border-radius:9px;background:#f8fafd}.rank-button{padding:5px 8px;border:0;border-radius:6px;color:#68758d;background:transparent;font-size:9px;white-space:nowrap}.rank-button.active{color:#514dec;background:#fff;box-shadow:0 1px 4px #21314a18;font-weight:700}.ranking-layout{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(220px,.9fr);gap:18px;align-items:center}.rank-chart-wrap{height:205px}.rank-list{display:grid;gap:7px;padding:10px;border:1px solid #dce5f1;border-radius:10px;background:#f8fafc}.rank-item{display:grid;grid-template-columns:25px 1fr auto auto;align-items:center;gap:7px;padding:7px 8px;background:#fff;border:1px solid #e6ebf3;border-radius:7px;font-size:10px}.rank-badge{width:20px;text-align:center;padding:3px 0;border-radius:5px;color:#fff;background:#9aa8bd;font-weight:750}.rank-item:nth-child(1) .rank-badge{background:#ff9a00}.rank-item:nth-child(2) .rank-badge{background:#8d9db5}.rank-item:nth-child(3) .rank-badge{background:#ef8d45}.rank-name{font-weight:700;color:#283650}.rank-main{color:#07866c;font-weight:750;font-variant-numeric:tabular-nums}.rank-sub{color:#8591a5;font-size:9px;white-space:nowrap}
+    .table-wrap{overflow-x:auto}table{width:100%;border-collapse:collapse;min-width:620px}th,td{padding:9px 11px;border-bottom:1px solid #edf1f6;text-align:left;white-space:nowrap;font-size:10px}th{color:#758198;background:#f8fafc;font-size:9px;font-weight:700}td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}tbody tr:last-child td{border-bottom:0}.status{padding:9px 2px 0;color:#7e8ba0;font-size:10px}.empty{color:var(--muted);text-align:center;padding:18px;font-size:11px}.error{margin:10px 0;color:#a93333;background:#fff1f0;border:1px solid #ffd3cf;border-radius:8px;padding:10px;font-size:11px}
+    @media(max-width:760px){.toolbar{padding:10px;align-items:flex-start}.toolbar-controls{flex-wrap:wrap;justify-content:flex-end}.status-inline{width:100%;text-align:right}.summary{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}main{padding:12px 10px 24px}.metric{min-height:61px;padding:10px}.metric-value{font-size:17px}.charts,.ranking-layout{grid-template-columns:1fr}.chart-wrap,.rank-chart-wrap{height:190px}.section{padding:12px 11px}.section-heading{align-items:flex-start;flex-wrap:wrap}}@media(max-width:420px){.brand{font-size:12px}.person-label{display:none}select{min-width:120px}.rank-button{padding:5px;font-size:8px}.rank-list{padding:7px}}
   </style>
 </head>
 <body>
   <div class="topline"></div>
-  <header class="toolbar">
-    <div class="brand">📊 아정당 실적 대시보드<small id="updated">스프레드시트 데이터 연결 중…</small></div>
-    <div class="toolbar-controls">
-      <label class="person-label" for="personFilter">담당자</label>
-      <select id="personFilter" aria-label="담당자별 대시보드 선택"><option value="all">전체 담당자</option></select>
-      <button id="refreshButton" type="button">↻ 새로고침</button>
-    </div>
-  </header>
-
+  <header class="toolbar"><div class="brand">📊 아정당 실적 대시보드<small id="updated">스프레드시트 데이터 연결 중…</small></div><div class="toolbar-controls"><label class="person-label" for="personFilter">담당자</label><select id="personFilter" aria-label="담당자별 대시보드 선택"><option value="all">전체 담당자</option></select><button id="refreshButton" type="button">↻ 새로고침</button></div></header>
   <main>
     <div id="loadError" class="error" hidden></div>
-
     <section class="summary" id="overview">
       <article class="metric"><div><div class="metric-label" id="countLabel">월 건수</div><div class="metric-value blue"><span id="count">-</span><span class="metric-unit">건</span></div></div><div class="metric-icon">▣</div></article>
       <article class="metric"><div><div class="metric-label" id="marginLabel">월 총 마진</div><div class="metric-value"><span id="totalMargin">-</span><span class="metric-unit">원</span></div></div><div class="metric-icon green">₩</div></article>
@@ -34,396 +27,92 @@
       <article class="metric"><div><div class="metric-label">부가 · 모바일 기준</div><div class="metric-value"><span id="addon">-</span></div></div><div class="metric-icon green">＋</div></article>
       <article class="metric"><div><div class="metric-label">모동 · 모바일 기준</div><div class="metric-value"><span id="mobileDong">-</span></div></div><div class="metric-icon orange">◉</div></article>
     </section>
-
-    <section class="section">
-      <div class="section-heading"><h2 class="section-title">📍 <span id="periodTitle">최신 월</span> <span id="personTitle">전체</span> 실적 분석</h2></div>
-      <div class="charts">
-        <article class="chart-card"><h3 class="chart-title">◕ 계약 유형별 건수 비중</h3><div class="chart-wrap"><canvas id="typeChart"></canvas></div></article>
-        <article class="chart-card"><h3 class="chart-title">▧ 담당자별 마진 기여도</h3><div class="chart-wrap"><canvas id="personChart"></canvas></div></article>
-      </div>
-    </section>
-
-    <section class="section" id="ranking">
-      <div class="section-heading">
-        <h2 class="section-title">🏆 담당자별 순위 랭킹 <span class="section-note">선택 기준으로 높은 순서 정렬</span></h2>
-        <div class="rank-controls" role="group" aria-label="순위 기준">
-          <button class="rank-button active" data-rank="average">🏅 평균 마진</button>
-          <button class="rank-button" data-rank="count">🥇 건수</button>
-          <button class="rank-button" data-rank="total">💰 총 마진</button>
-        </div>
-      </div>
-      <div class="ranking-layout">
-        <div class="rank-chart-wrap"><canvas id="rankChart"></canvas></div>
-        <div class="rank-list" id="rankList"></div>
-      </div>
-    </section>
-
-    <section class="section" id="contracts">
-      <div class="section-heading"><h2 class="section-title">📋 <span id="contractTitle">전체</span> 계약 목록 · <span id="periodContractTitle">최신 월</span></h2><span class="section-note" id="contractCount"></span></div>
-      <div class="table-wrap"><table><thead><tr><th>날짜</th><th>담당자</th><th>계약번호</th><th>유형</th><th>부가</th><th>모동</th><th class="num">마진 금액</th></tr></thead><tbody id="orderRows"></tbody></table></div>
-      <div class="status" id="status">스프레드시트 데이터 불러오는 중…</div>
-    </section>
+    <section class="section"><div class="section-heading"><h2 class="section-title">📍 <span id="periodTitle">최신 월</span> <span id="personTitle">전체</span> 실적 분석</h2></div><div class="charts"><article class="chart-card"><h3 class="chart-title">◕ 계약 유형별 건수 비중</h3><div class="chart-wrap"><canvas id="typeChart"></canvas></div></article><article class="chart-card"><h3 class="chart-title">▧ 담당자별 마진 기여도</h3><div class="chart-wrap"><canvas id="personChart"></canvas></div></article></div></section>
+    <section class="section" id="ranking"><div class="section-heading"><h2 class="section-title">🏆 담당자별 순위 랭킹 <span class="section-note">선택 기준으로 높은 순서 정렬</span></h2><div class="rank-controls" role="group" aria-label="순위 기준"><button class="rank-button active" data-rank="average">🏅 평균 마진</button><button class="rank-button" data-rank="count">🥇 건수</button><button class="rank-button" data-rank="total">💰 총 마진</button></div></div><div class="ranking-layout"><div class="rank-chart-wrap"><canvas id="rankChart"></canvas></div><div class="rank-list" id="rankList"></div></div></section>
+    <section class="section" id="contracts"><div class="section-heading"><h2 class="section-title">📋 <span id="contractTitle">전체</span> 계약 목록 · <span id="periodContractTitle">최신 월</span></h2><span class="section-note" id="contractCount"></span></div><div class="table-wrap"><table><thead><tr><th>날짜</th><th>담당자</th><th>계약번호</th><th>유형</th><th>부가</th><th>모동</th><th class="num">마진 금액</th></tr></thead><tbody id="orderRows"></tbody></table></div><div class="status" id="status">스프레드시트 데이터 불러오는 중…</div></section>
   </main>
+<script>
+  const CSV_URL="https://docs.google.com/spreadsheets/d/e/2PACX-1vTHjYdKL-DbXDzp19ukPoJwYJgDYcayWc2wJG4Ho23uReMI3uBAHAgD7PfhaOFdj0it2R88XDF5pEqk/pub?output=csv";
+  const PERSON_TARGET=15000000;
+  // Repeated spreadsheet blocks: ID, type, add-on, mobile dong, margin. B-F, G-K, L-P.
+  const BLOCK_STARTS=[1,6,11];
+  const TYPE_ORDER=["인터넷","모바일","알뜰","유심","렌탈","기타","미분류"];
+  const TYPE_COLORS={"인터넷":"#625cf0","모바일":"#3881f3","알뜰":"#12b89a","유심":"#ff9b18","렌탈":"#ef5d91","기타":"#8e78e8","미분류":"#aab5c5"};
+  let allData={people:[],orders:[]},activeMonth="",activePerson="all",typeChart,personChart,rankChart,rankMode="average";
 
-  <script>
-    const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTHjYdKL-DbXDzp19ukPoJwYJgDYcayWc2wJG4Ho23uReMI3uBAHAgD7PfhaOFdj0it2R88XDF5pEqk/pub?output=csv";
-    const PERSON_TARGET = 15000000;
-    const BLOCK_STARTS = [1, 6, 11];
-    const TYPE_ORDER = ["인터넷","모바일","알뜰","유심","렌탈","기타","미분류"];
-    const TYPE_COLORS = { "인터넷": "#625cf0", "모바일": "#3881f3", "알뜰": "#12b89a", "유심": "#ff9b18", "렌탈": "#ef5d91", "기타": "#8e78e8", "미분류": "#aab5c5" };
-    let allData = { people: [], orders: [] };
-    let activeMonth = "";
-    let activePerson = "all";
-    let typeChart, personChart, rankChart;
-    let rankMode = "average";
+  function parseCSV(text){
+    const result=[];let row=[],cell="",quoted=false;
+    for(let i=0;i<text.length;i++){const c=text[i];if(c==='"'&&quoted&&text[i+1]==='"'){cell+='"';i++;}else if(c==='"')quoted=!quoted;else if(c===","&&!quoted){row.push(cell);cell="";}else if((c==="\n"||c==="\r")&&!quoted){if(c==="\r"&&text[i+1]==="\n")i++;row.push(cell);result.push(row);row=[];cell="";}else cell+=c;}
+    if(cell||row.length){row.push(cell);result.push(row);}return result.map(r=>r.map(v=>String(v).trim()));
+  }
+  function amount(value){const text=String(value??"").replace(/[₩원\s,]/g,"");if(!/^-?\d+(?:\.\d+)?$/.test(text))return 0;const n=Number(text);return Number.isFinite(n)?n:0;}
+  function normalizeType(value){const t=String(value||"").trim().replace(/\s+/g,"");if(/^모바일|^모발/.test(t))return"모바일";if(/^인터넷/.test(t))return"인터넷";if(/^알뜰/.test(t))return"알뜰";if(/^유심/.test(t))return"유심";if(/^렌탈/.test(t))return"렌탈";return t?"기타":"미분류";}
+  function marked(value){return ["o","○","ㅇ","yes","y","1","✓","✔"].includes(String(value||"").trim().toLowerCase());}
+  function monthOf(id,date){const m=String(id).match(/^AJ[DO](\d{4})(\d{2})\d{2}/i);if(m)return`${m[1]}-${m[2]}`;const d=String(date||"").match(/(20\d{2})[./年 -]?(\d{1,2})/);return d?`${d[1]}-${String(d[2]).padStart(2,"0")}`:"미분류";}
 
-    function parseCSV(text) {
-      const result = [];
-      let row = [], cell = "", quoted = false;
-      for (let i = 0; i < text.length; i++) {
-        const c = text[i];
-        if (c === '"' && quoted && text[i + 1] === '"') { cell += '"'; i++; }
-        else if (c === '"') quoted = !quoted;
-        else if (c === ',' && !quoted) { row.push(cell); cell = ""; }
-        else if ((c === '\n' || c === '\r') && !quoted) {
-          if (c === '\r' && text[i + 1] === '\n') i++;
-          row.push(cell);
-          result.push(row);
-          row = [];
-          cell = "";
-        } else {
-          cell += c;
-        }
-      }
-      if (cell || row.length) {
-        row.push(cell);
-        result.push(row);
-      }
-      return result.map(r => r.map(v => String(v).trim()));
-    }
-
-    function amount(v) {
-      const n = Number(String(v ?? "").replace(/[^\d.-]/g, ""));
-      return Number.isFinite(n) ? n : 0;
-    }
-
-    function normalizeType(value) {
-      const t = String(value || "").trim().replace(/\s+/g, "");
-      if (/^모바일|^모발/.test(t)) return "모바일";
-      if (/^인터넷/.test(t)) return "인터넷";
-      if (/^알뜰/.test(t)) return "알뜰";
-      if (/^유심/.test(t)) return "유심";
-      if (/^렌탈/.test(t)) return "렌탈";
-      return t ? "기타" : "미분류";
-    }
-
-    function marked(value) {
-      const t = String(value || "").trim().toLowerCase();
-      return ["o", "○", "ㅇ", "yes", "y", "1", "✓", "✔"].includes(t);
-    }
-
-    function monthOf(orderId, date) {
-      const m = String(orderId).match(/^AJ[DO](\d{4})(\d{2})\d{2}/i);
-      if (m) return `${m[1]}-${m[2]}`;
-      const d = String(date || "").match(/(20\d{2})[./년 -]?(\d{1,2})/);
-      return d ? `${d[1]}-${String(d[2]).padStart(2, "0")}` : "미분류";
-    }
-
-    function findNearestPerson(index, persons) {
-      let best = 0;
-      let minDiff = Infinity;
-      for (let i = 0; i < BLOCK_STARTS.length; i++) {
-        const diff = Math.abs(index - BLOCK_STARTS[i]);
-        if (diff < minDiff) {
-          minDiff = diff;
-          best = i;
-        }
-      }
-      return persons[best] || "미지정";
-    }
-
-    function detectOrderType(candidates) {
-      for (const item of candidates) {
-        const text = String(item || "").trim();
-        if (!text) continue;
-        if (/^인터넷/i.test(text)) return "인터넷";
-        if (/^모바일/i.test(text)) return "모바일";
-        if (/^알뜰/i.test(text)) return "알뜰";
-        if (/^유심/i.test(text)) return "유심";
-        if (/^렌탈/i.test(text)) return "렌탈";
-      }
-      return "기타";
-    }
-
-    function detectAmount(candidates) {
-      for (const item of candidates) {
-        const text = String(item || "").trim();
-        if (!text) continue;
-        const match = text.match(/\d[0-9,]{2,}/);
-        if (match) return amount(match[0]);
-      }
-      return 0;
-    }
-
-    function detectMark(candidates) {
-      for (const item of candidates) {
-        const t = String(item || "").trim().toLowerCase();
-        if (marked(t)) return true;
-        if (["부가", "추가", "o", "yes", "y", "1", "✓", "✔"].includes(t)) return true;
-      }
-      return false;
-    }
-
-    function parseSheet(csv) {
-      const rows = parseCSV(csv);
-      const header = rows[1] || [];
-      const names = BLOCK_STARTS.map((col, idx) => String(header[col] || "").trim() || `담당자 ${idx + 1}`);
-      const orders = [];
-      let currentDate = "";
-
-      for (const row of rows.slice(2)) {
-        const dateCell = String(row[0] || "").trim();
-        if (dateCell && /\d/.test(dateCell)) {
-          currentDate = dateCell;
-        }
-
-        for (let i = 0; i < row.length; i++) {
-          const id = String(row[i] || "").trim();
-          if (!/^AJ[DO]\d{8,}$/i.test(id)) continue;
-
-          const context = row.slice(i + 1, i + 10);
-          const person = findNearestPerson(i, names);
-          const type = detectOrderType(context) || normalizeType(row[i + 1] || "");
-          const amountValue = detectAmount(context) || amount(row[i + 1] || row[i + 2] || row[i + 3] || row[i + 4] || "");
-          const addon = detectMark(context)
-          const mobileDong = /모동|동|MOBILE/i.test(String(context.join(' '))) ? detectMark(context) : false;
-
-          orders.push({
-            id,
-            date: currentDate || "날짜 미지정",
-            month: monthOf(id, currentDate),
-            person,
-            type,
-            addon,
-            mobileDong,
-            amount: amountValue
-          });
-        }
-      }
-
-      return {
-        people: [...new Set(orders.map(o => o.person))],
-        orders
-      };
-    }
-
-    const won = n => Math.round(n).toLocaleString("ko-KR");
-    const pct = (n, d) => d ? `${(n / d * 100).toFixed(1)}%` : "0.0%";
-
-    function esc(v) {
-      return String(v).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-    }
-
-    function monthLabel(m) {
-      if (!m || m === "미분류") return "전체 기간";
-      const [y, n] = m.split('-');
-      return `${y}년 ${Number(n)}월`;
-    }
-
-    function currentOrders() {
-      return allData.orders.filter(o => (!activeMonth || o.month === activeMonth) && (activePerson === 'all' || o.person === activePerson));
-    }
-
-    function statsFor(orders) {
-      return allData.people.map(person => {
-        const mine = orders.filter(o => o.person === person);
-        const total = mine.reduce((sum, o) => sum + o.amount, 0);
-        return { person, count: mine.length, total, average: mine.length ? total / mine.length : 0 };
+  function parseSheet(csv){
+    const rows=parseCSV(csv),header=rows[1]||[];
+    const blockPeople=BLOCK_STARTS.map((start,i)=>String(header[start]||"").trim()||`담당자 ${i+1}`);
+    const ordersById=new Map();let currentDate="";
+    for(const row of rows.slice(2)){
+      const dateCell=String(row[0]||"").trim();
+      if(dateCell&&/^(?:\d{1,2}[./-]\d{1,2}|20\d{2})/.test(dateCell))currentDate=dateCell;
+      // Each record is read from its own five-column block. Do not search neighboring blocks for an amount;
+      // that can accidentally assign another contract's margin and inflate the total.
+      BLOCK_STARTS.forEach((start,blockIndex)=>{
+        const id=String(row[start]||"").trim();
+        if(!/^AJ[DO]\d{8,}$/i.test(id))return;
+        const type=normalizeType(row[start+1]);
+        const record={id,date:currentDate||"날짜 미지정",month:monthOf(id,currentDate),person:blockPeople[blockIndex],type,
+          addon:marked(row[start+2]),mobileDong:marked(row[start+3]),amount:amount(row[start+4])};
+        ordersById.set(id,record);
       });
     }
-
-    function sortedStats(stats, key) {
-      return [...stats].sort((a, b) => b[key] - a[key] || a.person.localeCompare(b.person, 'ko'));
-    }
-
-    function renderRanking(stats) {
-      const ranked = sortedStats(stats, rankMode);
-      const values = ranked.map(x => x[rankMode]);
-
-      if (rankChart) rankChart.destroy();
-      rankChart = new Chart(document.getElementById('rankChart'), {
-        type: 'bar',
-        data: {
-          labels: ranked.map(x => x.person),
-          datasets: [{
-            label: rankMode,
-            data: values,
-            backgroundColor: ranked.map(x => x.person === activePerson ? '#ff861b' : '#625cf0'),
-            borderRadius: 5,
-            barThickness: 26
-          }]
-        },
-        options: {
-          indexAxis: 'y',
-          maintainAspectRatio: false,
-          plugins: {
-            legend: { display: false },
-            tooltip: { callbacks: { label: c => rankMode === 'count' ? ` ${c.raw}건` : ` ${won(c.raw)}원` } }
-          },
-          scales: {
-            x: { beginAtZero: true, ticks: { font: { size: 8 }, callback: v => rankMode === 'count' ? `${v}건` : `${Math.round(v / 10000)}만` }, grid: { color: '#e8edf4' } },
-            y: { ticks: { font: { size: 9 } }, grid: { display: false } }
-          }
-        }
-      });
-
-      document.getElementById('rankList').innerHTML = ranked.map((x, i) => {
-        const main = rankMode === 'count' ? `${x.count}건` : `${won(x[rankMode])}원`;
-        const sub = rankMode === 'count' ? `${won(x.total)}원 · 총마진` : `${x.count}건 · 평균 ${won(x.average)}원`;
-        return `<div class="rank-item"><span class="rank-badge">${i + 1}위</span><span class="rank-name">${esc(x.person)}</span><span class="rank-main">${main}</span><span class="rank-sub">${sub}</span></div>`;
-      }).join('') || '<div class="empty">표시할 담당자 데이터가 없습니다.</div>';
-    }
-
-    function render() {
-      const orders = currentOrders();
-      const total = orders.reduce((sum, o) => sum + o.amount, 0);
-      const count = orders.length;
-      const target = ((activePerson === 'all') ? allData.people.length : 1) * PERSON_TARGET;
-      const mobileOrders = orders.filter(o => o.type === '모바일');
-      const addon = mobileOrders.filter(o => o.addon).length;
-      const dong = mobileOrders.filter(o => o.mobileDong).length;
-      const period = monthLabel(activeMonth);
-      const name = activePerson === 'all' ? '전체' : activePerson;
-
-      document.getElementById('periodTitle').textContent = period;
-      document.getElementById('personTitle').textContent = name;
-      document.getElementById('contractTitle').textContent = name;
-      document.getElementById('periodContractTitle').textContent = period;
-      document.getElementById('countLabel').textContent = `${name} ${period} 건수`;
-      document.getElementById('marginLabel').textContent = `${name} ${period} 총 마진`;
-      document.getElementById('count').textContent = count.toLocaleString('ko-KR');
-      document.getElementById('totalMargin').textContent = won(total);
-      document.getElementById('average').textContent = won(count ? total / count : 0);
-      document.getElementById('rate').textContent = target ? `${(total / target * 100).toFixed(1)}%` : '-';
-      document.getElementById('goal').textContent = won(target);
-      document.getElementById('addon').textContent = `${addon}건 · ${pct(addon, mobileOrders.length)}`;
-      document.getElementById('mobileDong').textContent = `${dong}건 · ${pct(dong, mobileOrders.length)}`;
-
-      const typeCounts = new Map();
-      orders.forEach(o => typeCounts.set(o.type, (typeCounts.get(o.type) || 0) + 1));
-      const types = [...TYPE_ORDER.filter(t => typeCounts.has(t)), ...[...typeCounts.keys()].filter(t => !TYPE_ORDER.includes(t))];
-
-      if (typeChart) typeChart.destroy();
-      typeChart = new Chart(document.getElementById('typeChart'), {
-        type: 'doughnut',
-        data: {
-          labels: types,
-          datasets: [{
-            data: types.map(t => typeCounts.get(t) || 0),
-            backgroundColor: types.map(t => TYPE_COLORS[t] || '#8e78e8'),
-            borderWidth: 2,
-            borderColor: '#f8fafc'
-          }]
-        },
-        options: {
-          maintainAspectRatio: false,
-          cutout: '47%',
-          plugins: {
-            legend: { position: 'bottom', labels: { boxWidth: 7, boxHeight: 7, padding: 9, font: { size: 9 } } },
-            tooltip: { callbacks: { label: c => ` ${c.label}: ${c.raw}건 (${pct(c.raw, count)})` } }
-          }
-        }
-      });
-
-      const comparison = activePerson === 'all' ? orders : allData.orders.filter(o => (!activeMonth || o.month === activeMonth));
-      const comparisonStats = statsFor(comparison);
-      const totalAll = comparison.reduce((sum, o) => sum + o.amount, 0);
-
-      if (personChart) personChart.destroy();
-      personChart = new Chart(document.getElementById('personChart'), {
-        type: 'pie',
-        data: {
-          labels: comparisonStats.map(s => s.person),
-          datasets: [{
-            data: comparisonStats.map(s => s.total),
-            backgroundColor: ['#625cf0', '#12b8cf', '#ff861b', '#12b89a', '#ed5d91'],
-            borderWidth: 2,
-            borderColor: '#f8fafc'
-          }]
-        },
-        options: {
-          maintainAspectRatio: false,
-          plugins: {
-            legend: { position: 'bottom', labels: { boxWidth: 7, boxHeight: 7, padding: 9, font: { size: 9 } } },
-            tooltip: { callbacks: { label: c => ` ${c.label}: ${won(c.raw)}원 (${pct(c.raw, totalAll)})` } }
-          }
-        }
-      });
-
-      renderRanking(comparisonStats);
-
-      document.getElementById('orderRows').innerHTML = orders.length ? [...orders].reverse().map(o => `
-        <tr>
-          <td>${esc(o.date)}</td>
-          <td>${esc(o.person)}</td>
-          <td>${esc(o.id)}</td>
-          <td>${esc(o.type)}</td>
-          <td>${o.addon ? 'O' : '—'}</td>
-          <td>${o.mobileDong ? 'O' : '—'}</td>
-          <td class="num">${won(o.amount)}원</td>
-        </tr>
-      `).join('') : '<tr><td colspan="7" class="empty">선택한 담당자의 해당 기간 계약이 없습니다.</td></tr>';
-
-      document.getElementById('contractCount').textContent = `${count.toLocaleString('ko-KR')}건`;
-      document.getElementById('status').textContent = `${name} · ${count}건 · 총 마진 ${won(total)}원 · 평균 ${won(count ? total / count : 0)}원 · 부가/모동 비율은 모바일 ${mobileOrders.length}건 기준`;
-    }
-
-    async function loadData() {
-      const error = document.getElementById('loadError');
-      error.hidden = true;
-      document.getElementById('updated').textContent = '시트 데이터 불러오는 중…';
-
-      try {
-        const response = await fetch(CSV_URL, { cache: 'no-store' });
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-
-        allData = parseSheet(await response.text());
-        if (!allData.orders.length) throw new Error('주문 행을 찾지 못했습니다. 공개 CSV 배치와 주문번호 형식을 확인해주세요.');
-
-        const months = [...new Set(allData.orders.map(o => o.month).filter(m => m && m !== '미분류'))].sort();
-        activeMonth = months[months.length - 1] || '';
-
-        const select = document.getElementById('personFilter');
-        const previous = select.value;
-        select.innerHTML = '<option value="all">전체 담당자</option>' + allData.people.map(p => `<option value="${esc(p)}">${esc(p)}</option>`).join('');
-        if (allData.people.includes(previous)) select.value = previous;
-
-        activePerson = select.value;
-        select.onchange = () => {
-          activePerson = select.value;
-          render();
-        };
-
-        document.getElementById('updated').textContent = `${monthLabel(activeMonth)} 기준 · ${allData.orders.length}건 연결`;
-        render();
-      } catch (e) {
-        error.hidden = false;
-        error.textContent = `시트 데이터를 불러오지 못했습니다: ${e.message}`;
-        document.getElementById('updated').textContent = '연결 오류';
-        document.getElementById('status').textContent = '시트 게시 설정과 공개 CSV 주소를 확인해주세요.';
-      }
-    }
-
-    document.getElementById('refreshButton').addEventListener('click', loadData);
-    document.querySelectorAll('.rank-button').forEach(button => {
-      button.addEventListener('click', () => {
-        document.querySelectorAll('.rank-button').forEach(x => x.classList.toggle('active', x === button));
-        rankMode = button.dataset.rank;
-        if (allData.orders.length) render();
-      });
-    });
-
-    loadData();
-  </script>
+    const orders=[...ordersById.values()];
+    const people=[...new Set([...blockPeople.filter(p=>!/^담당자 \d+$/.test(p)),...orders.map(o=>o.person)])];
+    return{people,orders};
+  }
+  const won=n=>Math.round(n).toLocaleString("ko-KR"),pct=(n,d)=>d?`${(n/d*100).toFixed(1)}%`:"0.0%";
+  function esc(v){return String(v).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
+  function monthLabel(m){if(!m)return"전체 기간";const[y,n]=m.split("-");return`${y}년 ${Number(n)}월`;}
+  function currentOrders(){return allData.orders.filter(o=>(!activeMonth||o.month===activeMonth)&&(activePerson==="all"||o.person===activePerson));}
+  function statsFor(orders){return allData.people.map(person=>{const mine=orders.filter(o=>o.person===person),total=mine.reduce((s,o)=>s+o.amount,0);return{person,count:mine.length,total,average:mine.length?total/mine.length:0};});}
+  function sortedStats(stats,key){return[...stats].sort((a,b)=>b[key]-a[key]||a.person.localeCompare(b.person,"ko"));}
+  function renderRanking(stats){
+    const ranked=sortedStats(stats,rankMode);if(rankChart)rankChart.destroy();
+    rankChart=new Chart(document.getElementById("rankChart"),{type:"bar",data:{labels:ranked.map(x=>x.person),datasets:[{label:rankMode,data:ranked.map(x=>x[rankMode]),backgroundColor:ranked.map(x=>x.person===activePerson?"#ff861b":"#625cf0"),borderRadius:5,barThickness:26}]},options:{indexAxis:"y",maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>rankMode==="count"?` ${c.raw}건`:` ${won(c.raw)}원`}}},scales:{x:{beginAtZero:true,ticks:{font:{size:8},callback:v=>rankMode==="count"?`${v}건`:`${Math.round(v/10000)}만`},grid:{color:"#e8edf4"}},y:{ticks:{font:{size:9}},grid:{display:false}}}}});
+    document.getElementById("rankList").innerHTML=ranked.map((x,i)=>{const main=rankMode==="count"?`${x.count}건`:`${won(x[rankMode])}원`,sub=rankMode==="count"?`${won(x.total)}원 · 총마진`:`${x.count}건 · 평균 ${won(x.average)}원`;return`<div class="rank-item"><span class="rank-badge">${i+1}위</span><span class="rank-name">${esc(x.person)}</span><span class="rank-main">${main}</span><span class="rank-sub">${sub}</span></div>`;}).join("")||'<div class="empty">표시할 담당자 데이터가 없습니다.</div>';
+  }
+  function render(){
+    const orders=currentOrders(),total=orders.reduce((s,o)=>s+o.amount,0),count=orders.length,target=(activePerson==="all"?allData.people.length:1)*PERSON_TARGET;
+    const mobiles=orders.filter(o=>o.type==="모바일"),addon=mobiles.filter(o=>o.addon).length,dong=mobiles.filter(o=>o.mobileDong).length;
+    const period=monthLabel(activeMonth),name=activePerson==="all"?"전체":activePerson;
+    document.getElementById("periodTitle").textContent=period;document.getElementById("periodContractTitle").textContent=period;document.getElementById("personTitle").textContent=name;document.getElementById("contractTitle").textContent=name;
+    document.getElementById("countLabel").textContent=`${name} ${period} 건수`;document.getElementById("marginLabel").textContent=`${name} ${period} 총 마진`;
+    document.getElementById("count").textContent=count.toLocaleString("ko-KR");document.getElementById("totalMargin").textContent=won(total);document.getElementById("average").textContent=won(count?total/count:0);document.getElementById("rate").textContent=target?`${(total/target*100).toFixed(1)}%`:"-";document.getElementById("goal").textContent=won(target);
+    document.getElementById("addon").textContent=`${addon}건 · ${pct(addon,mobiles.length)}`;document.getElementById("mobileDong").textContent=`${dong}건 · ${pct(dong,mobiles.length)}`;
+    const typeCounts=new Map();orders.forEach(o=>typeCounts.set(o.type,(typeCounts.get(o.type)||0)+1));const types=[...TYPE_ORDER.filter(t=>typeCounts.has(t)),...[...typeCounts.keys()].filter(t=>!TYPE_ORDER.includes(t))];if(typeChart)typeChart.destroy();
+    typeChart=new Chart(document.getElementById("typeChart"),{type:"doughnut",data:{labels:types,datasets:[{data:types.map(t=>typeCounts.get(t)),backgroundColor:types.map(t=>TYPE_COLORS[t]||"#8e78e8"),borderWidth:2,borderColor:"#f8fafc"}]},options:{maintainAspectRatio:false,cutout:"47%",plugins:{legend:{position:"bottom",labels:{boxWidth:7,boxHeight:7,padding:9,font:{size:9}}},tooltip:{callbacks:{label:c=>` ${c.label}: ${c.raw}건 (${pct(c.raw,count)})`}}}}});
+    const comparison=activePerson==="all"?orders:allData.orders.filter(o=>!activeMonth||o.month===activeMonth),comparisonStats=statsFor(comparison),comparisonTotal=comparison.reduce((s,o)=>s+o.amount,0);if(personChart)personChart.destroy();
+    personChart=new Chart(document.getElementById("personChart"),{type:"pie",data:{labels:comparisonStats.map(x=>x.person),datasets:[{data:comparisonStats.map(x=>x.total),backgroundColor:["#625cf0","#12b8cf","#ff861b","#12b89a","#ed5d91"],borderWidth:2,borderColor:"#f8fafc"}]},options:{maintainAspectRatio:false,plugins:{legend:{position:"bottom",labels:{boxWidth:7,boxHeight:7,padding:9,font:{size:9}}},tooltip:{callbacks:{label:c=>` ${c.label}: ${won(c.raw)}원 (${pct(c.raw,comparisonTotal)})`}}}}});
+    renderRanking(comparisonStats);
+    document.getElementById("orderRows").innerHTML=orders.length?[...orders].reverse().map(o=>`<tr><td>${esc(o.date)}</td><td>${esc(o.person)}</td><td>${esc(o.id)}</td><td>${esc(o.type)}</td><td>${o.addon?"O":"—"}</td><td>${o.mobileDong?"O":"—"}</td><td class="num">${won(o.amount)}원</td></tr>`).join(""):'<tr><td colspan="7" class="empty">선택한 담당자의 해당 기간 계약이 없습니다.</td></tr>';
+    document.getElementById("contractCount").textContent=`${count.toLocaleString("ko-KR")}건`;document.getElementById("status").textContent=`${name} · ${count}건 · 총 마진 ${won(total)}원 · 평균 ${won(count?total/count:0)}원 · 부가/모동 비율은 모바일 ${mobiles.length}건 기준`;
+  }
+  async function loadData(){
+    const error=document.getElementById("loadError");error.hidden=true;document.getElementById("updated").textContent="시트 데이터 불러오는 중…";
+    try{
+      const response=await fetch(CSV_URL,{cache:"no-store"});if(!response.ok)throw new Error(`HTTP ${response.status}`);allData=parseSheet(await response.text());
+      if(!allData.orders.length)throw new Error("주문 행을 찾지 못했습니다. 시트 블록 열(B-F, G-K, L-P)을 확인해주세요.");
+      const months=[...new Set(allData.orders.map(o=>o.month).filter(m=>m&&m!=="미분류"))].sort();activeMonth=months[months.length-1]||"";
+      const select=document.getElementById("personFilter"),previous=select.value;select.innerHTML='<option value="all">전체 담당자</option>'+allData.people.map(p=>`<option value="${esc(p)}">${esc(p)}</option>`).join("");if(allData.people.includes(previous))select.value=previous;
+      activePerson=select.value;select.onchange=()=>{activePerson=select.value;render();};
+      document.getElementById("updated").textContent=`${monthLabel(activeMonth)} 기준 · ${allData.orders.length}건 연결`;render();
+    }catch(e){error.hidden=false;error.textContent=`시트 데이터를 불러오지 못했습니다: ${e.message}`;document.getElementById("updated").textContent="연결 오류";document.getElementById("status").textContent="시트 게시 설정과 공개 CSV 주소를 확인해주세요.";}
+  }
+  document.getElementById("refreshButton").addEventListener("click",loadData);
+  document.querySelectorAll(".rank-button").forEach(button=>button.addEventListener("click",()=>{document.querySelectorAll(".rank-button").forEach(x=>x.classList.toggle("active",x===button));rankMode=button.dataset.rank;if(allData.orders.length)render();}));
+  loadData();
+</script>
 </body>
 </html>
