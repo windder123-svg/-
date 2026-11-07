@@ -53,7 +53,7 @@
   </header>
   <section class="cards">
     <article class="card"><div class="label">목표 금액</div><div class="value" id="goal">-</div></article>
-    <article class="card"><div class="label">실적 금액</div><div class="value" id="actual">-</div></article>
+    <article class="card"><div class="label">총 합계 금액</div><div class="value" id="actual">-</div></article>
     <article class="card"><div class="label">목표 달성률</div><div class="value" id="rate">-</div></article>
     <article class="card"><div class="label">주문 건수</div><div class="value" id="orders">-</div></article>
   </section>
@@ -71,7 +71,6 @@
   </section>
 </main>
 <script>
-  // Google Sheets 공개 게시 CSV URL
   const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTHjYdKL-DbXDzp19ukPoJwYJgDYcayWc2wJG4Ho23uReMI3uBAHAgD7PfhaOFdj0it2R88XDF5pEqk/pub?output=csv";
   let allData = { people: [], goals: {}, orders: [] };
   let dailyChart, personChart;
@@ -107,7 +106,8 @@
       if (row[0]) currentDate = row[0];
       idCols.forEach((col, i) => {
         const id = row[col] || "";
-        if (/^AJD/i.test(id)) orders.push({ date: currentDate || "날짜 미지정", person: people[i] || `담당자 ${i + 1}`, id, amount: amount(row[col + 1]) });
+        // 시트의 주문번호는 AJO로 시작하므로 AJD/AJO 모두 인식
+        if (/^AJ[DO]/i.test(id)) orders.push({ date: currentDate || "날짜 미지정", person: people[i] || `담당자 ${i + 1}`, id, amount: amount(row[col + 1]) });
       });
     }
     return { people, goals, orders };
@@ -121,10 +121,10 @@
     const visible = selected === "all" ? allData.orders : allData.orders.filter(x => x.person === selected);
     const selectedPeople = selected === "all" ? allData.people : [selected];
     const goal = selectedPeople.reduce((sum, p) => sum + (allData.goals[p] || 0), 0);
-    const actual = visible.reduce((sum, x) => sum + x.amount, 0);
+    const total = visible.reduce((sum, x) => sum + x.amount, 0);
     document.getElementById("goal").textContent = won(goal);
-    document.getElementById("actual").textContent = won(actual);
-    document.getElementById("rate").textContent = goal ? `${(actual / goal * 100).toFixed(1)}%` : "-";
+    document.getElementById("actual").textContent = won(total);
+    document.getElementById("rate").textContent = goal ? `${(total / goal * 100).toFixed(1)}%` : "-";
     document.getElementById("orders").textContent = visible.length.toLocaleString("ko-KR");
     const dates = [...new Set(visible.map(x => x.date))];
     const dailyValues = dates.map(date => visible.filter(x => x.date === date).reduce((sum, x) => sum + x.amount, 0));
@@ -151,7 +151,7 @@
       const response = await fetch(CSV_URL, { cache: "no-store" });
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       allData = parseSheet(await response.text());
-      if (!allData.orders.length) throw new Error("주문 데이터가 없습니다. 시트의 열 배치와 CSV 게시 설정을 확인해주세요.");
+      if (!allData.orders.length) throw new Error("주문번호가 인식되지 않았습니다. 시트 데이터 형식을 확인해주세요.");
       const filter = document.getElementById("personFilter");
       filter.innerHTML = '<option value="all">전체 담당자</option>' + allData.people.map(p => `<option value="${escapeHTML(p)}">${escapeHTML(p)}</option>`).join("");
       filter.onchange = render;
