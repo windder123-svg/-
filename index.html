@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>아정당 실적 대시보드</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root { font-family: system-ui, -apple-system, "Apple SD Gothic Neo", sans-serif; color: #172033; background: #f4f6fb; }
+    * { box-sizing: border-box; }
+    body { margin: 0; padding: 28px; }
+    main { max-width: 1180px; margin: auto; }
+    header, .toolbar, .cards, .panels { display: flex; gap: 16px; }
+    header { justify-content: space-between; align-items: center; margin-bottom: 22px; }
+    h1 { margin: 0; font-size: 25px; }
+    h2 { font-size: 16px; margin: 0 0 14px; }
+    .subtle, .label { color: #778198; font-size: 13px; }
+    select, button { border: 1px solid #dce1eb; border-radius: 9px; background: white; padding: 10px 12px; font: inherit; }
+    button { cursor: pointer; }
+    .card, .panel { background: white; border: 1px solid #e8ebf2; border-radius: 14px; box-shadow: 0 3px 12px #1c2a4410; }
+    .cards { margin-bottom: 16px; }
+    .card { flex: 1; padding: 18px; min-width: 0; }
+    .value { font-size: 25px; font-weight: 700; margin-top: 8px; }
+    .panels { margin-bottom: 16px; }
+    .panel { padding: 18px; flex: 1; min-width: 0; }
+    .chart-wrap { height: 280px; }
+    .table-panel { padding: 0; overflow: hidden; }
+    .table-title { padding: 18px 18px 0; }
+    .table-wrap { overflow-x: auto; }
+    table { border-collapse: collapse; width: 100%; min-width: 650px; }
+    th, td { padding: 12px 18px; text-align: left; border-bottom: 1px solid #edf0f5; }
+    th { color: #778198; font-size: 12px; font-weight: 600; }
+    td.amount { text-align: right; font-variant-numeric: tabular-nums; }
+    .status { padding: 12px 15px; color: #68748a; font-size: 13px; }
+    .error { color: #b42318; background: #fff3f1; border-radius: 10px; padding: 13px; }
+    @media (max-width: 760px) {
+      body { padding: 16px; }
+      header, .panels { align-items: stretch; flex-direction: column; }
+      .cards { flex-wrap: wrap; }
+      .card { flex: 1 1 40%; }
+      .value { font-size: 21px; }
+    }
+  </style>
+</head>
+<body>
+<main>
+  <header>
+    <div><h1>아정당 실적 대시보드</h1><div class="subtle" id="updated">스프레드시트 데이터 불러오는 중…</div></div>
+    <div class="toolbar">
+      <select id="personFilter" aria-label="담당자 선택"><option value="all">전체 담당자</option></select>
+      <button id="refreshButton">새로고침</button>
+    </div>
+  </header>
+  <section class="cards">
+    <article class="card"><div class="label">목표 금액</div><div class="value" id="goal">-</div></article>
+    <article class="card"><div class="label">실적 금액</div><div class="value" id="actual">-</div></article>
+    <article class="card"><div class="label">목표 달성률</div><div class="value" id="rate">-</div></article>
+    <article class="card"><div class="label">주문 건수</div><div class="value" id="orders">-</div></article>
+  </section>
+  <section class="panels">
+    <article class="panel"><h2>날짜별 실적</h2><div class="chart-wrap"><canvas id="dailyChart"></canvas></div></article>
+    <article class="panel"><h2>담당자별 실적</h2><div class="chart-wrap"><canvas id="personChart"></canvas></div></article>
+  </section>
+  <section class="panel table-panel">
+    <div class="table-title"><h2>주문 내역</h2></div>
+    <div class="table-wrap"><table>
+      <thead><tr><th>날짜</th><th>담당자</th><th>주문번호</th><th style="text-align:right">금액</th></tr></thead>
+      <tbody id="rows"></tbody>
+    </table></div>
+    <div class="status" id="status">데이터를 불러오는 중…</div>
+  </section>
+</main>
+<script>
+  // Google Sheets 공개 게시 CSV URL
+  const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTHjYdKL-DbXDzp19ukPoJwYJgDYcayWc2wJG4Ho23uReMI3uBAHAgD7PfhaOFdj0it2R88XDF5pEqk/pub?output=csv";
+  let allData = { people: [], goals: {}, orders: [] };
+  let dailyChart, personChart;
+
+  function parseCSV(text) {
+    const result = []; let row = [], cell = "", quoted = false;
+    for (let i = 0; i < text.length; i++) {
+      const c = text[i];
+      if (c === '"' && quoted && text[i + 1] === '"') { cell += '"'; i++; }
+      else if (c === '"') quoted = !quoted;
+      else if (c === "," && !quoted) { row.push(cell); cell = ""; }
+      else if ((c === "\n" || c === "\r") && !quoted) {
+        if (c === "\r" && text[i + 1] === "\n") i++;
+        row.push(cell); result.push(row); row = []; cell = "";
+      } else cell += c;
+    }
+    if (cell || row.length) { row.push(cell); result.push(row); }
+    return result.map(r => r.map(v => v.trim()));
+  }
+  function amount(value) {
+    const n = Number(String(value || "").replace(/[^\d.-]/g, ""));
+    return Number.isFinite(n) ? n : 0;
+  }
+  function parseSheet(csv) {
+    const rows = parseCSV(csv);
+    // 담당자별 블록: B-C, D-E, F-G (주문번호, 금액)
+    const idCols = [1, 3, 5];
+    const people = idCols.map(col => rows[1]?.[col]).filter(Boolean);
+    const goals = {};
+    people.forEach((person, i) => { goals[person] = amount(rows[0]?.[idCols[i] + 1]); });
+    const orders = []; let currentDate = "";
+    for (const row of rows.slice(2)) {
+      if (row[0]) currentDate = row[0];
+      idCols.forEach((col, i) => {
+        const id = row[col] || "";
+        if (/^AJD/i.test(id)) orders.push({ date: currentDate || "날짜 미지정", person: people[i] || `담당자 ${i + 1}`, id, amount: amount(row[col + 1]) });
+      });
+    }
+    return { people, goals, orders };
+  }
+  const won = n => `${Math.round(n).toLocaleString("ko-KR")}원`;
+  function escapeHTML(value) {
+    return String(value).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  }
+  function render() {
+    const selected = document.getElementById("personFilter").value;
+    const visible = selected === "all" ? allData.orders : allData.orders.filter(x => x.person === selected);
+    const selectedPeople = selected === "all" ? allData.people : [selected];
+    const goal = selectedPeople.reduce((sum, p) => sum + (allData.goals[p] || 0), 0);
+    const actual = visible.reduce((sum, x) => sum + x.amount, 0);
+    document.getElementById("goal").textContent = won(goal);
+    document.getElementById("actual").textContent = won(actual);
+    document.getElementById("rate").textContent = goal ? `${(actual / goal * 100).toFixed(1)}%` : "-";
+    document.getElementById("orders").textContent = visible.length.toLocaleString("ko-KR");
+    const dates = [...new Set(visible.map(x => x.date))];
+    const dailyValues = dates.map(date => visible.filter(x => x.date === date).reduce((sum, x) => sum + x.amount, 0));
+    const personValues = selectedPeople.map(person => visible.filter(x => x.person === person).reduce((sum, x) => sum + x.amount, 0));
+    if (dailyChart) dailyChart.destroy();
+    if (personChart) personChart.destroy();
+    dailyChart = new Chart(document.getElementById("dailyChart"), {
+      type: "bar", data: { labels: dates, datasets: [{ label: "실적 금액", data: dailyValues, backgroundColor: "#6485f5", borderRadius: 6 }] },
+      options: { maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { callback: v => `${Number(v).toLocaleString()}원` } } } }
+    });
+    personChart = new Chart(document.getElementById("personChart"), {
+      type: "doughnut", data: { labels: selectedPeople, datasets: [{ data: personValues, backgroundColor: ["#6485f5", "#38b89a", "#f5a64a", "#a17af5"] }] },
+      options: { maintainAspectRatio: false, plugins: { legend: { position: "bottom" } } }
+    });
+    document.getElementById("rows").innerHTML = visible.slice().reverse().map(x =>
+      `<tr><td>${escapeHTML(x.date)}</td><td>${escapeHTML(x.person)}</td><td>${escapeHTML(x.id)}</td><td class="amount">${won(x.amount)}</td></tr>`
+    ).join("");
+    document.getElementById("status").textContent = `${visible.length.toLocaleString("ko-KR")}건 표시 중`;
+  }
+  async function loadData() {
+    document.getElementById("updated").textContent = "스프레드시트 데이터 불러오는 중…";
+    document.getElementById("status").textContent = "";
+    try {
+      const response = await fetch(CSV_URL, { cache: "no-store" });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      allData = parseSheet(await response.text());
+      if (!allData.orders.length) throw new Error("주문 데이터가 없습니다. 시트의 열 배치와 CSV 게시 설정을 확인해주세요.");
+      const filter = document.getElementById("personFilter");
+      filter.innerHTML = '<option value="all">전체 담당자</option>' + allData.people.map(p => `<option value="${escapeHTML(p)}">${escapeHTML(p)}</option>`).join("");
+      filter.onchange = render;
+      document.getElementById("updated").textContent = `공개 게시 시트에서 불러옴 · ${new Date().toLocaleString("ko-KR")}`;
+      render();
+    } catch (error) {
+      document.getElementById("updated").innerHTML = `<div class="error">데이터를 불러오지 못했습니다: ${escapeHTML(error.message)}<br>시트가 웹에 게시되어 있는지, 게시된 CSV 주소가 맞는지 확인해주세요.</div>`;
+      document.getElementById("status").textContent = "데이터 연결에 실패했습니다.";
+    }
+  }
+  document.getElementById("refreshButton").addEventListener("click", loadData);
+  loadData();
+</script>
+</body>
+</html>
