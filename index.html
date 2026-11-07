@@ -52,8 +52,8 @@
     </div>
   </header>
   <section class="cards">
-    <article class="card"><div class="label">목표 금액</div><div class="value" id="goal">-</div></article>
-    <article class="card"><div class="label">총 합계 금액</div><div class="value" id="actual">-</div></article>
+    <article class="card"><div class="label" id="goalLabel">총 목표 금액</div><div class="value" id="goal">45,000,000원</div></article>
+    <article class="card"><div class="label">총 합계 금액</div><div class="value" id="actual">불러오는 중…</div></article>
     <article class="card"><div class="label">목표 달성률</div><div class="value" id="rate">-</div></article>
     <article class="card"><div class="label">주문 건수</div><div class="value" id="orders">-</div></article>
   </section>
@@ -72,7 +72,9 @@
 </main>
 <script>
   const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTHjYdKL-DbXDzp19ukPoJwYJgDYcayWc2wJG4Ho23uReMI3uBAHAgD7PfhaOFdj0it2R88XDF5pEqk/pub?output=csv";
-  let allData = { people: [], goals: {}, orders: [] };
+  const PERSON_TARGET = 15000000;
+  const ID_COLUMNS = [1, 3, 5]; // B, D, F열의 주문번호; 금액은 오른쪽 열
+  let allData = { people: [], orders: [] };
   let dailyChart, personChart;
 
   function parseCSV(text) {
@@ -91,26 +93,30 @@
     return result.map(r => r.map(v => v.trim()));
   }
   function amount(value) {
-    const n = Number(String(value || "").replace(/[^\d.-]/g, ""));
+    const n = Number(String(value ?? "").replace(/[^\d.-]/g, ""));
     return Number.isFinite(n) ? n : 0;
   }
   function parseSheet(csv) {
     const rows = parseCSV(csv);
-    // 담당자별 블록: B-C, D-E, F-G (주문번호, 금액)
-    const idCols = [1, 3, 5];
-    const people = idCols.map(col => rows[1]?.[col]).filter(Boolean);
-    const goals = {};
-    people.forEach((person, i) => { goals[person] = amount(rows[0]?.[idCols[i] + 1]); });
-    const orders = []; let currentDate = "";
+    // 담당자 이름은 두 번째 행의 B, D, F열에 있음.
+    const people = ID_COLUMNS.map(col => (rows[1]?.[col] || "").trim());
+    const orders = [];
+    let currentDate = "";
     for (const row of rows.slice(2)) {
       if (row[0]) currentDate = row[0];
-      idCols.forEach((col, i) => {
-        const id = row[col] || "";
-        // 시트의 주문번호는 AJO로 시작하므로 AJD/AJO 모두 인식
-        if (/^AJ[DO]/i.test(id)) orders.push({ date: currentDate || "날짜 미지정", person: people[i] || `담당자 ${i + 1}`, id, amount: amount(row[col + 1]) });
+      ID_COLUMNS.forEach((col, i) => {
+        const id = (row[col] || "").trim();
+        if (/^AJ[DO]\d+/i.test(id)) {
+          orders.push({
+            date: currentDate || "날짜 미지정",
+            person: people[i] || `담당자 ${i + 1}`,
+            id,
+            amount: amount(row[col + 1])
+          });
+        }
       });
     }
-    return { people, goals, orders };
+    return { people: people.filter(Boolean), orders };
   }
   const won = n => `${Math.round(n).toLocaleString("ko-KR")}원`;
   function escapeHTML(value) {
@@ -119,16 +125,17 @@
   function render() {
     const selected = document.getElementById("personFilter").value;
     const visible = selected === "all" ? allData.orders : allData.orders.filter(x => x.person === selected);
-    const selectedPeople = selected === "all" ? allData.people : [selected];
-    const goal = selectedPeople.reduce((sum, p) => sum + (allData.goals[p] || 0), 0);
+    const goal = selected === "all" ? allData.people.length * PERSON_TARGET : PERSON_TARGET;
     const total = visible.reduce((sum, x) => sum + x.amount, 0);
+    document.getElementById("goalLabel").textContent = selected === "all" ? "총 목표 금액" : `${selected} 목표 금액`;
     document.getElementById("goal").textContent = won(goal);
     document.getElementById("actual").textContent = won(total);
     document.getElementById("rate").textContent = goal ? `${(total / goal * 100).toFixed(1)}%` : "-";
     document.getElementById("orders").textContent = visible.length.toLocaleString("ko-KR");
     const dates = [...new Set(visible.map(x => x.date))];
     const dailyValues = dates.map(date => visible.filter(x => x.date === date).reduce((sum, x) => sum + x.amount, 0));
-    const personValues = selectedPeople.map(person => visible.filter(x => x.person === person).reduce((sum, x) => sum + x.amount, 0));
+    const people = selected === "all" ? allData.people : [selected];
+    const personValues = people.map(person => visible.filter(x => x.person === person).reduce((sum, x) => sum + x.amount, 0));
     if (dailyChart) dailyChart.destroy();
     if (personChart) personChart.destroy();
     dailyChart = new Chart(document.getElementById("dailyChart"), {
@@ -136,13 +143,13 @@
       options: { maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { callback: v => `${Number(v).toLocaleString()}원` } } } }
     });
     personChart = new Chart(document.getElementById("personChart"), {
-      type: "doughnut", data: { labels: selectedPeople, datasets: [{ data: personValues, backgroundColor: ["#6485f5", "#38b89a", "#f5a64a", "#a17af5"] }] },
+      type: "doughnut", data: { labels: people, datasets: [{ data: personValues, backgroundColor: ["#6485f5", "#38b89a", "#f5a64a"] }] },
       options: { maintainAspectRatio: false, plugins: { legend: { position: "bottom" } } }
     });
     document.getElementById("rows").innerHTML = visible.slice().reverse().map(x =>
       `<tr><td>${escapeHTML(x.date)}</td><td>${escapeHTML(x.person)}</td><td>${escapeHTML(x.id)}</td><td class="amount">${won(x.amount)}</td></tr>`
     ).join("");
-    document.getElementById("status").textContent = `${visible.length.toLocaleString("ko-KR")}건 표시 중`;
+    document.getElementById("status").textContent = `${visible.length.toLocaleString("ko-KR")}건 · 합계 ${won(total)}`;
   }
   async function loadData() {
     document.getElementById("updated").textContent = "스프레드시트 데이터 불러오는 중…";
@@ -151,14 +158,15 @@
       const response = await fetch(CSV_URL, { cache: "no-store" });
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       allData = parseSheet(await response.text());
-      if (!allData.orders.length) throw new Error("주문번호가 인식되지 않았습니다. 시트 데이터 형식을 확인해주세요.");
+      if (!allData.orders.length) throw new Error("주문 데이터를 찾지 못했습니다. CSV 공개 설정과 시트 열 배치를 확인해주세요.");
       const filter = document.getElementById("personFilter");
       filter.innerHTML = '<option value="all">전체 담당자</option>' + allData.people.map(p => `<option value="${escapeHTML(p)}">${escapeHTML(p)}</option>`).join("");
       filter.onchange = render;
       document.getElementById("updated").textContent = `공개 게시 시트에서 불러옴 · ${new Date().toLocaleString("ko-KR")}`;
       render();
     } catch (error) {
-      document.getElementById("updated").innerHTML = `<div class="error">데이터를 불러오지 못했습니다: ${escapeHTML(error.message)}<br>시트가 웹에 게시되어 있는지, 게시된 CSV 주소가 맞는지 확인해주세요.</div>`;
+      document.getElementById("actual").textContent = "불러오기 실패";
+      document.getElementById("updated").innerHTML = `<div class="error">데이터를 불러오지 못했습니다: ${escapeHTML(error.message)}<br>시트가 웹에 게시되어 있는지 확인해주세요.</div>`;
       document.getElementById("status").textContent = "데이터 연결에 실패했습니다.";
     }
   }
