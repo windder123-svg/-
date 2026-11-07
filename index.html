@@ -1,11 +1,8 @@
 <!doctype html>
 <html lang="ko">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#101a31">
-  <title>아정당 매장 실적 현황</title>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#101a31">
+  <title>아정당 매장 실적 현황</title><script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     :root{color-scheme:light;--ink:#17233c;--muted:#78849b;--line:#dce5f1;--paper:#f5f8fc;--blue:#625cf0;--teal:#12b89a;--orange:#ff861b;font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo",sans-serif;color:var(--ink);background:var(--paper)}
     *{box-sizing:border-box}body{margin:0;min-width:320px;background:var(--paper)}.topline{height:5px;background:#101a31}.toolbar{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:12px max(18px,calc((100vw - 1204px)/2));background:#fff;border-bottom:1px solid var(--line)}.brand{font-size:14px;font-weight:780;color:#202d48}.brand small{display:block;margin-top:3px;color:var(--muted);font-size:10px;font-weight:450}.toolbar-controls{display:flex;align-items:center;gap:8px}.person-label{font-size:11px;color:#66748c}select,button{font:inherit}select{color:#24314d;border:1px solid #d5deeb;border-radius:8px;background:#fff;padding:8px 11px;font-size:11px;min-width:135px}button{cursor:pointer;border:1px solid #cad7ff;border-radius:20px;color:#514dec;background:#f5f6ff;padding:7px 11px;font-size:10px;white-space:nowrap}.status-inline{font-size:10px;color:#66748c;white-space:nowrap}
@@ -37,59 +34,75 @@
 <script>
   const CSV_URL="https://docs.google.com/spreadsheets/d/e/2PACX-1vTHjYdKL-DbXDzp19ukPoJwYJgDYcayWc2wJG4Ho23uReMI3uBAHAgD7PfhaOFdj0it2R88XDF5pEqk/pub?output=csv";
   const PERSON_TARGET=15000000;
-  // Screenshot layout: A=date; B-F=first staff, G-K=second staff, L-P=third staff.
-  // In each block: order ID, type, add-on, mobile dong, margin.
-  const BLOCK_STARTS=[1,6,11], MARGIN_OFFSET=4;
+  const BLOCK_STARTS=[1,6,11];
   const TYPE_ORDER=["인터넷","모바일","알뜰","유심","렌탈","기타","미분류"];
   const TYPE_COLORS={"인터넷":"#625cf0","모바일":"#3881f3","알뜰":"#12b89a","유심":"#ff9b18","렌탈":"#ef5d91","기타":"#8e78e8","미분류":"#aab5c5"};
   let allData={people:[],orders:[]},activeMonth="",activePerson="all",typeChart,personChart,rankChart,rankMode="average";
 
   function parseCSV(text){
     const result=[];let row=[],cell="",quoted=false;
-    for(let i=0;i<text.length;i++){const c=text[i];if(c==='"'&&quoted&&text[i+1]==='"'){cell+='"';i++;}else if(c==='"')quoted=!quoted;else if(c===","&&!quoted){row.push(cell);cell="";}else if((c==="\n"||c==="\r")&&!quoted){if(c==="\r"&&text[i+1]==="\n")i++;row.push(cell);result.push(row);row=[];cell="";}else cell+=c;}
-    if(cell||row.length){row.push(cell);result.push(row);}return result.map(r=>r.map(v=>String(v).trim()));
+    for(let i=0;i<text.length;i++){
+      const c=text[i];
+      if(c==='"'&&quoted&&text[i+1]==='"'){cell+='"';i++;}
+      else if(c==='"')quoted=!quoted;
+      else if(c===","&&!quoted){row.push(cell);cell="";}
+      else if((c==="\n"||c==="\r")&&!quoted){if(c==="\r"&&text[i+1]==="\n")i++;row.push(cell);result.push(row);row=[];cell="";}
+      else cell+=c;
+    }
+    if(cell||row.length){row.push(cell);result.push(row);}
+    return result.map(r=>r.map(v=>String(v).trim()));
   }
-  function parseAmount(value){const text=String(value??"").replace(/[₩원\s,]/g,"");if(!/^-?\d+(?:\.\d+)?$/.test(text))return null;const n=Number(text);return Number.isFinite(n)?n:null;}
-  function normalizeType(value){const t=String(value||"").trim().replace(/\s+/g,"");if(/^모바일|^모발/.test(t))return"모바일";if(/^인터넷/.test(t))return"인터넷";if(/^알뜰/.test(t))return"알뜰";if(/^유심/.test(t))return"유심";if(/^렌탈/.test(t))return"렌탈";return t?"기타":"미분류";}
+  function amount(value){const n=Number(String(value??"").replace(/[^\d.-]/g,""));return Number.isFinite(n)?n:0;}
+  function normalizeType(value){const type=String(value||"").trim().replace(/\s/g,"");if(/^모발|^모바일/.test(type))return"모바일";if(/^인터넷/.test(type))return"인터넷";if(/^알뜰/.test(type))return"알뜰";if(/^유심/.test(type))return"유심";if(/^렌탈/.test(type))return"렌탈";return type?"기타":"미분류";}
   function marked(value){return["o","○","ㅇ","yes","y","1","✓","✔"].includes(String(value||"").trim().toLowerCase());}
-  function extractOrderId(value){const match=String(value||"").toUpperCase().match(/AJ[DO]\d{8,}/);return match?match[0]:"";}
   function monthOf(id,date){const m=String(id).match(/^AJ[DO](\d{4})(\d{2})\d{2}/i);if(m)return`${m[1]}-${m[2]}`;const d=String(date||"").match(/(20\d{2})[./年 -]?(\d{1,2})/);return d?`${d[1]}-${String(d[2]).padStart(2,"0")}`:"미분류";}
-  function isDateLabel(value){return /^(?:\d{1,2}[./-]\d{1,2}|20\d{2})/.test(String(value||"").trim());}
-  function getStaffNames(rows){
-    const knownLabels=new Set(["목표","유형","부가","모동","总合計","총 합계","합계","마진"]);
-    return BLOCK_STARTS.map((start,index)=>{
-      for(const row of rows.slice(0,6)){
-        const value=String(row[start]||"").trim();
-        if(value&&!extractOrderId(value)&&!knownLabels.has(value)&&parseAmount(value)===null&&!isDateLabel(value))return value;
+
+  function parseSheet(csv) {
+    const rows = parseCSV(csv);
+    const blockStarts = [1, 6, 11]; // B, G, L
+    const header = rows[0] || [];
+    const people = blockStarts.map((start, i) =>
+      String(header[start] || "").trim() || `담당자 ${i + 1}`
+    );
+
+    const ordersById = new Map();
+    let currentDate = "";
+
+    // 첫 번째 행은 제목/담당자 헤더이므로, 두 번째 행부터 읽습니다.
+    for (const row of rows.slice(1)) {
+      const dateCell = String(row[0] || "").trim();
+      if (/^(?:\d{1,2}[./-]\d{1,2}|20\d{2})/.test(dateCell)) {
+        currentDate = dateCell;
       }
-      return`담당자 ${index+1}`;
-    });
-  }
-  function parseSheet(csv){
-    const rows=parseCSV(csv),names=getStaffNames(rows),byId=new Map();let currentDate="";
-    for(const row of rows){
-      const dateCell=String(row[0]||"").trim();if(isDateLabel(dateCell))currentDate=dateCell;
-      // Ignore spreadsheet grand-total cells; only read order records from the three known blocks.
-      if(row.some(cell=>/^총\s*합계$|^합계$|^총계$/.test(String(cell||"").trim())))continue;
-      BLOCK_STARTS.forEach((start,staffIndex)=>{
-        // Exact cell first, then inspect only the remaining cells in this person's five-column block.
-        let id="",idColumn=-1;
-        for(let col=start;col<start+5;col++){const candidate=extractOrderId(row[col]);if(candidate){id=candidate;idColumn=col;break;}}
-        if(!id)return;
-        const relative=idColumn-start;
-        // The layout is ID/type/add-on/mobile-dong/margin. If an ID was embedded in a note cell,
-        // use the block's fixed fields, not numbers from neighboring staff blocks.
-        const date=currentDate||"날짜 미지정";
-        const amount=parseAmount(row[start+MARGIN_OFFSET]);
-        const order={id,date,month:monthOf(id,date),person:names[staffIndex],type:normalizeType(row[start+1]),addon:marked(row[start+2]),mobileDong:marked(row[start+3]),amount:amount??0};
-        const existing=byId.get(id);
-        if(!existing||(!existing.amount&&order.amount))byId.set(id,order);
+
+      blockStarts.forEach((start, i) => {
+        const id = String(row[start] || "").trim().match(/^AJ[DO]\d{8,}$/i)?.[0];
+        if (!id) return;
+
+        const marginText = String(row[start + 4] ?? "").replace(/[₩원\s,]/g, "");
+        const margin = /^-?\d+(?:\.\d+)?$/.test(marginText)
+          ? Number(marginText)
+          : 0;
+
+        ordersById.set(id, {
+          id,
+          date: currentDate || "날짜 미지정",
+          month: monthOf(id, currentDate),
+          person: people[i],
+          type: normalizeType(row[start + 1]),
+          addon: marked(row[start + 2]),
+          mobileDong: marked(row[start + 3]),
+          amount: margin
+        });
       });
     }
-    const orders=[...byId.values()];
-    const people=[...new Set([...names.filter(p=>!/^담당자 \d+$/.test(p)),...orders.map(o=>o.person)])];
-    return{people,orders};
+
+    return {
+      people: [...new Set(people)],
+      orders: [...ordersById.values()]
+    };
   }
+
   const won=n=>Math.round(n).toLocaleString("ko-KR"),pct=(n,d)=>d?`${(n/d*100).toFixed(1)}%`:"0.0%";
   function esc(value){return String(value).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
   function monthLabel(month){if(!month)return"전체 기간";const[y,m]=month.split("-");return`${y}년 ${Number(m)}월`;}
@@ -120,7 +133,7 @@
     const error=document.getElementById("loadError");error.hidden=true;document.getElementById("updated").textContent="시트 데이터 불러오는 중…";
     try{
       const response=await fetch(CSV_URL,{cache:"no-store"});if(!response.ok)throw new Error(`HTTP ${response.status}`);allData=parseSheet(await response.text());
-      if(!allData.orders.length)throw new Error("주문 행을 찾지 못했습니다. A열 날짜와 B-F/G-K/L-P 열 배치를 확인해주세요.");
+      if(!allData.orders.length)throw new Error("주문 행을 찾지 못했습니다. 시트의 헤더 및 B-F/G-K/L-P 열 배치를 확인해주세요.");
       const months=[...new Set(allData.orders.map(o=>o.month).filter(m=>m&&m!=="미분류"))].sort();activeMonth=months[months.length-1]||"";
       const select=document.getElementById("personFilter"),previous=select.value;select.innerHTML='<option value="all">전체 담당자</option>'+allData.people.map(p=>`<option value="${esc(p)}">${esc(p)}</option>`).join("");if(allData.people.includes(previous))select.value=previous;
       activePerson=select.value;select.onchange=()=>{activePerson=select.value;render();};document.getElementById("updated").textContent=`${monthLabel(activeMonth)} 기준 · ${allData.orders.length}건 연결`;render();
