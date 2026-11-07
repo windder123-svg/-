@@ -18,10 +18,10 @@
     .cards { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 14px; }
     .card, .panel { background: white; border: 1px solid #e8ebf2; border-radius: 13px; box-shadow: 0 3px 12px #1c2a440a; }
     .card { padding: 15px 17px; min-width: 0; }
-    .value { font-size: 23px; font-weight: 700; margin-top: 6px; overflow-wrap: anywhere; }
+    .value { font-size: 22px; font-weight: 700; margin-top: 6px; overflow-wrap: anywhere; }
     .charts { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
     .panel { padding: 15px; min-width: 0; }
-    .chart-wrap { height: 220px; }
+    .chart-wrap { height: 230px; }
     .table-panel { padding: 0; overflow: hidden; margin-bottom: 14px; }
     .table-title { padding: 15px 16px 0; }
     .table-wrap { overflow-x: auto; }
@@ -56,6 +56,8 @@
     <article class="card"><div class="label">목표 달성률</div><div class="value" id="rate">-</div></article>
     <article class="card"><div class="label">전체 건수</div><div class="value" id="count">-</div></article>
     <article class="card"><div class="label">건당 평균 마진</div><div class="value" id="average">-</div></article>
+    <article class="card"><div class="label">부가 (모바일 기준)</div><div class="value" id="addon">-</div></article>
+    <article class="card"><div class="label">모동 (모바일 기준)</div><div class="value" id="mobileDong">-</div></article>
   </section>
 
   <section class="charts">
@@ -64,14 +66,18 @@
   </section>
 
   <section class="panel table-panel">
+    <div class="table-title"><h2>유형별 건수 및 비율</h2></div>
+    <div class="table-wrap"><table>
+      <thead><tr><th>유형</th><th class="num">건수</th><th class="num">전체 건수 비율</th></tr></thead>
+      <tbody id="typeRows"></tbody>
+    </table></div>
+    <div class="status" id="typeStatus"></div>
+  </section>
+
+  <section class="panel table-panel">
     <div class="table-title"><h2>담당자별 순위 — 총 마진·평균 마진·건수</h2></div>
     <div class="table-wrap"><table>
-      <thead><tr>
-        <th>담당자</th>
-        <th class="num">건수 순위</th><th class="num">건수</th>
-        <th class="num">총 마진 순위</th><th class="num">총 마진</th>
-        <th class="num">평균 마진 순위</th><th class="num">건당 평균 마진</th>
-      </tr></thead>
+      <thead><tr><th>담당자</th><th class="num">건수 순위</th><th class="num">건수</th><th class="num">총 마진 순위</th><th class="num">총 마진</th><th class="num">평균 마진 순위</th><th class="num">건당 평균 마진</th></tr></thead>
       <tbody id="rankingRows"></tbody>
     </table></div>
     <div class="status" id="rankingStatus"></div>
@@ -80,7 +86,7 @@
   <section class="panel table-panel">
     <div class="table-title"><h2>전체 주문 내역</h2></div>
     <div class="table-wrap"><table>
-      <thead><tr><th>날짜</th><th>담당자</th><th>주문번호</th><th class="num">마진 금액</th></tr></thead>
+      <thead><tr><th>날짜</th><th>담당자</th><th>주문번호</th><th>유형</th><th>부가</th><th>모동</th><th class="num">마진 금액</th></tr></thead>
       <tbody id="orderRows"></tbody>
     </table></div>
     <div class="status" id="status">데이터 불러오는 중…</div>
@@ -89,7 +95,9 @@
 <script>
   const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTHjYdKL-DbXDzp19ukPoJwYJgDYcayWc2wJG4Ho23uReMI3uBAHAgD7PfhaOFdj0it2R88XDF5pEqk/pub?output=csv";
   const PERSON_TARGET = 15000000;
-  const ID_COLUMNS = [1, 3, 5]; // B, D, F열 주문번호; 각 금액은 오른쪽 열
+  // 새 시트의 3개 반복 블록: 주문번호, 유형, 부가, 모동, 금액
+  const BLOCK_STARTS = [1, 6, 11];
+  const TYPE_ORDER = ["인터넷", "모바일", "알뜰", "유심", "렌탈", "기타"];
   let allData = { people: [], orders: [] };
   let dailyChart, personChart;
 
@@ -112,23 +120,45 @@
     const n = Number(String(value ?? "").replace(/[^\d.-]/g, ""));
     return Number.isFinite(n) ? n : 0;
   }
+  function normalizeType(value) {
+    const type = String(value || "").trim().replace(/\s/g, "");
+    if (/^모발/.test(type)) return "모바일";
+    if (/^모바일/.test(type)) return "모바일";
+    if (/^인터넷/.test(type)) return "인터넷";
+    if (/^알뜰/.test(type)) return "알뜰";
+    if (/^유심/.test(type)) return "유심";
+    if (/^렌탈/.test(type)) return "렌탈";
+    return type ? "기타" : "미분류";
+  }
+  function marked(value) {
+    return ["o", "○", "ㅇ", "yes", "y", "1", "✓", "✔"].includes(String(value || "").trim().toLowerCase());
+  }
   function parseSheet(csv) {
     const rows = parseCSV(csv);
-    const people = ID_COLUMNS.map(col => (rows[1]?.[col] || "").trim());
+    const people = BLOCK_STARTS.map(start => String(rows[1]?.[start] || "").trim());
     const orders = [];
     let currentDate = "";
     for (const row of rows.slice(2)) {
       if (row[0]) currentDate = row[0];
-      ID_COLUMNS.forEach((col, i) => {
-        const id = (row[col] || "").trim();
+      BLOCK_STARTS.forEach((start, i) => {
+        const id = String(row[start] || "").trim();
         if (/^AJ[DO]\d+/i.test(id)) {
-          orders.push({ date: currentDate || "날짜 미지정", person: people[i] || `담당자 ${i + 1}`, id, amount: amount(row[col + 1]) });
+          orders.push({
+            date: currentDate || "날짜 미지정",
+            person: people[i] || `담당자 ${i + 1}`,
+            id,
+            type: normalizeType(row[start + 1]),
+            addon: marked(row[start + 2]),
+            mobileDong: marked(row[start + 3]),
+            amount: amount(row[start + 4])
+          });
         }
       });
     }
     return { people: people.filter(Boolean), orders };
   }
   const won = n => `${Math.round(n).toLocaleString("ko-KR")}원`;
+  const percent = (n, denominator) => denominator ? `${(n / denominator * 100).toFixed(1)}%` : "0.0%";
   function escapeHTML(value) {
     return String(value).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   }
@@ -141,38 +171,50 @@
   }
   function rankMap(stats, key) {
     const sorted = [...stats].sort((a, b) => b[key] - a[key] || a.person.localeCompare(b.person, "ko"));
-    const ranks = new Map();
-    let rank = 0, prior;
+    const ranks = new Map(); let rank = 0, prior;
     sorted.forEach((item, index) => {
       if (index === 0 || item[key] !== prior) rank = index + 1;
-      ranks.set(item.person, rank);
-      prior = item[key];
+      ranks.set(item.person, rank); prior = item[key];
     });
     return ranks;
   }
   function render() {
-    const stats = getStats();
-    const total = allData.orders.reduce((sum, x) => sum + x.amount, 0);
-    const count = allData.orders.length;
+    const orders = allData.orders;
+    const total = orders.reduce((sum, x) => sum + x.amount, 0);
+    const count = orders.length;
     const target = allData.people.length * PERSON_TARGET;
+    const mobiles = orders.filter(x => x.type === "모바일");
+    const addonCount = mobiles.filter(x => x.addon).length;
+    const mobileDongCount = mobiles.filter(x => x.mobileDong).length;
+
     document.getElementById("goal").textContent = won(target);
     document.getElementById("totalMargin").textContent = won(total);
     document.getElementById("rate").textContent = target ? `${(total / target * 100).toFixed(1)}%` : "-";
     document.getElementById("count").textContent = `${count.toLocaleString("ko-KR")}건`;
     document.getElementById("average").textContent = won(count ? total / count : 0);
+    document.getElementById("addon").textContent = `${addonCount}건 · ${percent(addonCount, mobiles.length)}`;
+    document.getElementById("mobileDong").textContent = `${mobileDongCount}건 · ${percent(mobileDongCount, mobiles.length)}`;
 
+    const typeCounts = new Map();
+    orders.forEach(x => typeCounts.set(x.type, (typeCounts.get(x.type) || 0) + 1));
+    const types = [...TYPE_ORDER.filter(t => typeCounts.has(t)), ...[...typeCounts.keys()].filter(t => !TYPE_ORDER.includes(t))];
+    document.getElementById("typeRows").innerHTML = types.map(type => {
+      const n = typeCounts.get(type);
+      return `<tr><td>${escapeHTML(type)}</td><td class="num">${n}건</td><td class="num">${percent(n, count)}</td></tr>`;
+    }).join("");
+    document.getElementById("typeStatus").textContent = `부가: 모바일 ${mobiles.length}건 중 ${addonCount}건 (${percent(addonCount, mobiles.length)}) · 모동: 모바일 ${mobiles.length}건 중 ${mobileDongCount}건 (${percent(mobileDongCount, mobiles.length)})`;
+
+    const stats = getStats();
     const countRanks = rankMap(stats, "count");
     const totalRanks = rankMap(stats, "total");
     const averageRanks = rankMap(stats, "average");
     document.getElementById("rankingRows").innerHTML = stats.map(x => `
-      <tr><td>${escapeHTML(x.person)}</td>
-      <td class="num rank">${countRanks.get(x.person)}위</td><td class="num">${x.count.toLocaleString("ko-KR")}건</td>
+      <tr><td>${escapeHTML(x.person)}</td><td class="num rank">${countRanks.get(x.person)}위</td><td class="num">${x.count}건</td>
       <td class="num rank">${totalRanks.get(x.person)}위</td><td class="num">${won(x.total)}</td>
-      <td class="num rank">${averageRanks.get(x.person)}위</td><td class="num">${won(x.average)}</td></tr>`
-    ).join("");
+      <td class="num rank">${averageRanks.get(x.person)}위</td><td class="num">${won(x.average)}</td></tr>`).join("");
 
-    const dates = [...new Set(allData.orders.map(x => x.date))];
-    const dailyValues = dates.map(date => allData.orders.filter(x => x.date === date).reduce((sum, x) => sum + x.amount, 0));
+    const dates = [...new Set(orders.map(x => x.date))];
+    const dailyValues = dates.map(date => orders.filter(x => x.date === date).reduce((sum, x) => sum + x.amount, 0));
     if (dailyChart) dailyChart.destroy();
     if (personChart) personChart.destroy();
     dailyChart = new Chart(document.getElementById("dailyChart"), {
@@ -184,11 +226,11 @@
       type: "bar", data: { labels: byTotal.map(x => x.person), datasets: [{ label: "총 마진", data: byTotal.map(x => x.total), backgroundColor: "#38b89a", borderRadius: 5 }] },
       options: { indexAxis: "y", maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, ticks: { callback: v => `${Number(v).toLocaleString()}원` } } } }
     });
-    document.getElementById("orderRows").innerHTML = allData.orders.slice().reverse().map(x =>
-      `<tr><td>${escapeHTML(x.date)}</td><td>${escapeHTML(x.person)}</td><td>${escapeHTML(x.id)}</td><td class="num">${won(x.amount)}</td></tr>`
+    document.getElementById("orderRows").innerHTML = orders.slice().reverse().map(x =>
+      `<tr><td>${escapeHTML(x.date)}</td><td>${escapeHTML(x.person)}</td><td>${escapeHTML(x.id)}</td><td>${escapeHTML(x.type)}</td><td>${x.addon ? "O" : "X"}</td><td>${x.mobileDong ? "O" : "X"}</td><td class="num">${won(x.amount)}</td></tr>`
     ).join("");
-    document.getElementById("status").textContent = `전체 ${count.toLocaleString("ko-KR")}건 · 총 마진 ${won(total)} · 건당 평균 ${won(count ? total / count : 0)}`;
-    document.getElementById("rankingStatus").textContent = `${stats.length}명 · 순위는 건수, 총 마진, 건당 평균 마진별로 각각 산정`;
+    document.getElementById("status").textContent = `전체 ${count}건 · 총 마진 ${won(total)} · 건당 평균 ${won(count ? total / count : 0)}`;
+    document.getElementById("rankingStatus").textContent = `${stats.length}명 · 건수/총 마진/평균 마진 순위 · 부가·모동 비율은 모바일 건수 기준`;
   }
   async function loadData() {
     document.getElementById("updated").textContent = "스프레드시트 데이터 불러오는 중…";
@@ -197,7 +239,7 @@
       const response = await fetch(CSV_URL, { cache: "no-store" });
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       allData = parseSheet(await response.text());
-      if (!allData.orders.length) throw new Error("주문 데이터를 찾지 못했습니다. 공개 CSV의 열 배치와 주문번호 형식을 확인해주세요.");
+      if (!allData.orders.length) throw new Error("주문 행을 찾지 못했습니다. 새 시트의 블록 열 배치와 공개 CSV 설정을 확인해주세요.");
       document.getElementById("updated").textContent = `공개 게시 시트에서 불러옴 · ${new Date().toLocaleString("ko-KR")}`;
       render();
     } catch (error) {
