@@ -26,6 +26,7 @@
     select { color: #24314d; border: 1px solid #d5deeb; border-radius: 7px; background: #fff; padding: 6px 9px; font-size: 11px; }
     button { cursor: pointer; }
     .store-pill { border: 1px solid #cad7ff; border-radius: 20px; color: #514dec; background: #f5f6ff; padding: 6px 11px; font-size: 10px; white-space: nowrap; }
+    .status-inline { font-size: 10px; color: #66748c; white-space: nowrap; }
     main { max-width: 1240px; margin: 0 auto; padding: 16px 18px 34px; }
     .summary { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 0 0 14px; }
     .metric { min-height: 66px; padding: 12px 15px; display: flex; align-items: center; justify-content: space-between; gap: 10px; background: #fff; border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 2px 6px #20385c08; }
@@ -84,7 +85,12 @@
     <a class="nav-tab" href="#ranking">👤 개인별 실적 현황</a>
     <a class="nav-tab" href="#contracts">📋 내 계약 목록</a>
   </div>
-  <div class="filters"><label for="monthFilter">🗓 월</label><select id="monthFilter" aria-label="월 선택"><option value="all">전체 기간</option></select><span class="store-pill">📍 전체 담당자 (고정)</span></div>
+  <div class="filters">
+    <label for="monthFilter">🗓 월</label>
+    <select id="monthFilter" aria-label="월 선택"><option value="all">전체 기간</option></select>
+    <button id="refreshButton" class="store-pill" type="button">↻ 새로고침</button>
+    <div id="updated" class="status-inline">연결 대기 중</div>
+  </div>
 </nav>
 <main>
   <div id="loadError" class="error" hidden></div>
@@ -112,7 +118,7 @@
       <div class="rank-controls" role="group" aria-label="순위 기준">
         <button class="rank-button active" data-rank="average">🏅 평균 마진 순위</button>
         <button class="rank-button" data-rank="count">🥇 건수 순위</button>
-        <button class="rank-button" data-rank="total">💰 총 매출 순위</button>
+        <button class="rank-button" data-rank="total">💰 총 마진 순위</button>
       </div>
     </div>
     <div class="ranking-layout">
@@ -133,7 +139,6 @@
 <script>
   const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTHjYdKL-DbXDzp19ukPoJwYJgDYcayWc2wJG4Ho23uReMI3uBAHAgD7PfhaOFdj0it2R88XDF5pEqk/pub?output=csv";
   const PERSON_TARGET = 15000000;
-  // 새 시트의 반복 블록: 계약번호, 유형, 부가, 모동, 금액 (B-F, G-K, L-P)
   const BLOCK_STARTS = [1, 6, 11];
   const TYPE_COLORS = { "인터넷": "#625cf0", "모바일": "#3881f3", "알뜰": "#12b89a", "유심": "#ff9b18", "렌탈": "#ef5d91", "기타": "#8e78e8", "미분류": "#aab5c5" };
   const TYPE_ORDER = ["인터넷", "모바일", "알뜰", "유심", "렌탈", "기타", "미분류"];
@@ -263,12 +268,11 @@
     document.getElementById("status").textContent = `총 ${count.toLocaleString("ko-KR")}건 · 총 마진 ${won(total)}원 · 건당 평균 ${won(count ? total / count : 0)}원 · 부가/모동 비율은 모바일 ${mobiles.length}건 기준`;
   }
   function renderRanking(stats) {
-    const labels = { average: "건당 평균 마진", count: "계약 건수", total: "총 마진" };
     const ranked = sortedStats(stats, rankMode);
     const rankValues = ranked.map(x => x[rankMode]);
     if (rankChart) rankChart.destroy();
     rankChart = new Chart(document.getElementById("rankChart"), {
-      type: "bar", data: { labels: ranked.map(x => x.person), datasets: [{ label: labels[rankMode], data: rankValues, backgroundColor: ["#625cf0", "#3881f3", "#12b89a", "#ff9b18"], borderRadius: 5, barThickness: 26 }] },
+      type: "bar", data: { labels: ranked.map(x => x.person), datasets: [{ label: rankMode, data: rankValues, backgroundColor: ["#625cf0", "#3881f3", "#12b89a", "#ff9b18"], borderRadius: 5, barThickness: 26 }] },
       options: { indexAxis: "y", maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => rankMode === "count" ? ` ${c.raw}건` : ` ${won(c.raw)}원` } } }, scales: { x: { beginAtZero: true, ticks: { font: { size: 8 }, callback: v => rankMode === "count" ? `${v}건` : `${Math.round(v / 10000)}만` }, grid: { color: "#e8edf4" } }, y: { ticks: { font: { size: 9 } }, grid: { display: false } } } }
     });
     document.getElementById("rankList").innerHTML = ranked.map((x, i) => {
@@ -312,7 +316,6 @@
   document.querySelectorAll(".nav-tab").forEach(tab => tab.addEventListener("click", () => {
     document.querySelectorAll(".nav-tab").forEach(x => x.classList.toggle("active", x === tab));
   }));
-  document.getElementById("refreshButton").textContent = "↻ 새로고침";
   document.getElementById("updated").textContent = "공개 게시 스프레드시트 연결 대기 중";
   loadData();
 </script>
