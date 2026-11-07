@@ -18,27 +18,25 @@
     select, button { border: 1px solid #dce1eb; border-radius: 9px; background: white; padding: 10px 12px; font: inherit; }
     button { cursor: pointer; }
     .card, .panel { background: white; border: 1px solid #e8ebf2; border-radius: 14px; box-shadow: 0 3px 12px #1c2a4410; }
-    .cards { margin-bottom: 16px; }
-    .card { flex: 1; padding: 18px; min-width: 0; }
-    .value { font-size: 25px; font-weight: 700; margin-top: 8px; }
+    .cards { margin-bottom: 16px; flex-wrap: wrap; }
+    .card { flex: 1 1 170px; padding: 18px; min-width: 0; }
+    .value { font-size: 23px; font-weight: 700; margin-top: 8px; overflow-wrap: anywhere; }
     .panels { margin-bottom: 16px; }
     .panel { padding: 18px; flex: 1; min-width: 0; }
     .chart-wrap { height: 280px; }
-    .table-panel { padding: 0; overflow: hidden; }
+    .table-panel { padding: 0; overflow: hidden; margin-bottom: 16px; }
     .table-title { padding: 18px 18px 0; }
     .table-wrap { overflow-x: auto; }
     table { border-collapse: collapse; width: 100%; min-width: 650px; }
-    th, td { padding: 12px 18px; text-align: left; border-bottom: 1px solid #edf0f5; }
+    th, td { padding: 12px 18px; text-align: left; border-bottom: 1px solid #edf0f5; white-space: nowrap; }
     th { color: #778198; font-size: 12px; font-weight: 600; }
-    td.amount { text-align: right; font-variant-numeric: tabular-nums; }
+    td.amount, th.amount { text-align: right; font-variant-numeric: tabular-nums; }
     .status { padding: 12px 15px; color: #68748a; font-size: 13px; }
     .error { color: #b42318; background: #fff3f1; border-radius: 10px; padding: 13px; }
     @media (max-width: 760px) {
       body { padding: 16px; }
       header, .panels { align-items: stretch; flex-direction: column; }
-      .cards { flex-wrap: wrap; }
-      .card { flex: 1 1 40%; }
-      .value { font-size: 21px; }
+      .value { font-size: 20px; }
     }
   </style>
 </head>
@@ -52,19 +50,27 @@
     </div>
   </header>
   <section class="cards">
-    <article class="card"><div class="label" id="goalLabel">총 목표 금액</div><div class="value" id="goal">45,000,000원</div></article>
-    <article class="card"><div class="label">총 합계 금액</div><div class="value" id="actual">불러오는 중…</div></article>
+    <article class="card"><div class="label" id="goalLabel">총 목표 금액</div><div class="value" id="goal">-</div></article>
+    <article class="card"><div class="label">총 마진 금액</div><div class="value" id="actual">-</div></article>
     <article class="card"><div class="label">목표 달성률</div><div class="value" id="rate">-</div></article>
-    <article class="card"><div class="label">주문 건수</div><div class="value" id="orders">-</div></article>
+    <article class="card"><div class="label">건수</div><div class="value" id="orders">-</div></article>
+    <article class="card"><div class="label">건당 평균 마진</div><div class="value" id="average">-</div></article>
   </section>
   <section class="panels">
-    <article class="panel"><h2>날짜별 실적</h2><div class="chart-wrap"><canvas id="dailyChart"></canvas></div></article>
-    <article class="panel"><h2>담당자별 실적</h2><div class="chart-wrap"><canvas id="personChart"></canvas></div></article>
+    <article class="panel"><h2>날짜별 마진</h2><div class="chart-wrap"><canvas id="dailyChart"></canvas></div></article>
+    <article class="panel"><h2>담당자별 마진</h2><div class="chart-wrap"><canvas id="personChart"></canvas></div></article>
+  </section>
+  <section class="panel table-panel">
+    <div class="table-title"><h2>담당자별 순위</h2></div>
+    <div class="table-wrap"><table>
+      <thead><tr><th>순위</th><th>담당자</th><th class="amount">건수</th><th class="amount">총 마진</th><th class="amount">건당 평균 마진</th></tr></thead>
+      <tbody id="rankingRows"></tbody>
+    </table></div>
   </section>
   <section class="panel table-panel">
     <div class="table-title"><h2>주문 내역</h2></div>
     <div class="table-wrap"><table>
-      <thead><tr><th>날짜</th><th>담당자</th><th>주문번호</th><th style="text-align:right">금액</th></tr></thead>
+      <thead><tr><th>날짜</th><th>담당자</th><th>주문번호</th><th class="amount">마진 금액</th></tr></thead>
       <tbody id="rows"></tbody>
     </table></div>
     <div class="status" id="status">데이터를 불러오는 중…</div>
@@ -73,7 +79,7 @@
 <script>
   const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTHjYdKL-DbXDzp19ukPoJwYJgDYcayWc2wJG4Ho23uReMI3uBAHAgD7PfhaOFdj0it2R88XDF5pEqk/pub?output=csv";
   const PERSON_TARGET = 15000000;
-  const ID_COLUMNS = [1, 3, 5]; // B, D, F열의 주문번호; 금액은 오른쪽 열
+  const ID_COLUMNS = [1, 3, 5]; // B, D, F열의 주문번호; 각 주문의 마진은 오른쪽 열
   let allData = { people: [], orders: [] };
   let dailyChart, personChart;
 
@@ -98,7 +104,6 @@
   }
   function parseSheet(csv) {
     const rows = parseCSV(csv);
-    // 담당자 이름은 두 번째 행의 B, D, F열에 있음.
     const people = ID_COLUMNS.map(col => (rows[1]?.[col] || "").trim());
     const orders = [];
     let currentDate = "";
@@ -106,13 +111,9 @@
       if (row[0]) currentDate = row[0];
       ID_COLUMNS.forEach((col, i) => {
         const id = (row[col] || "").trim();
+        // 시트 주문번호는 AJO... 형식이며 기존 AJD 형식도 허용
         if (/^AJ[DO]\d+/i.test(id)) {
-          orders.push({
-            date: currentDate || "날짜 미지정",
-            person: people[i] || `담당자 ${i + 1}`,
-            id,
-            amount: amount(row[col + 1])
-          });
+          orders.push({ date: currentDate || "날짜 미지정", person: people[i] || `담당자 ${i + 1}`, id, amount: amount(row[col + 1]) });
         }
       });
     }
@@ -122,34 +123,46 @@
   function escapeHTML(value) {
     return String(value).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   }
+  function getRankings() {
+    return allData.people.map(person => {
+      const orders = allData.orders.filter(order => order.person === person);
+      const total = orders.reduce((sum, order) => sum + order.amount, 0);
+      return { person, count: orders.length, total, average: orders.length ? total / orders.length : 0 };
+    }).sort((a, b) => b.total - a.total);
+  }
   function render() {
     const selected = document.getElementById("personFilter").value;
     const visible = selected === "all" ? allData.orders : allData.orders.filter(x => x.person === selected);
     const goal = selected === "all" ? allData.people.length * PERSON_TARGET : PERSON_TARGET;
     const total = visible.reduce((sum, x) => sum + x.amount, 0);
+    const average = visible.length ? total / visible.length : 0;
     document.getElementById("goalLabel").textContent = selected === "all" ? "총 목표 금액" : `${selected} 목표 금액`;
     document.getElementById("goal").textContent = won(goal);
     document.getElementById("actual").textContent = won(total);
     document.getElementById("rate").textContent = goal ? `${(total / goal * 100).toFixed(1)}%` : "-";
-    document.getElementById("orders").textContent = visible.length.toLocaleString("ko-KR");
+    document.getElementById("orders").textContent = `${visible.length.toLocaleString("ko-KR")}건`;
+    document.getElementById("average").textContent = won(average);
+
     const dates = [...new Set(visible.map(x => x.date))];
     const dailyValues = dates.map(date => visible.filter(x => x.date === date).reduce((sum, x) => sum + x.amount, 0));
-    const people = selected === "all" ? allData.people : [selected];
-    const personValues = people.map(person => visible.filter(x => x.person === person).reduce((sum, x) => sum + x.amount, 0));
+    const ranked = getRankings();
     if (dailyChart) dailyChart.destroy();
     if (personChart) personChart.destroy();
     dailyChart = new Chart(document.getElementById("dailyChart"), {
-      type: "bar", data: { labels: dates, datasets: [{ label: "실적 금액", data: dailyValues, backgroundColor: "#6485f5", borderRadius: 6 }] },
+      type: "bar", data: { labels: dates, datasets: [{ label: "마진 금액", data: dailyValues, backgroundColor: "#6485f5", borderRadius: 6 }] },
       options: { maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { callback: v => `${Number(v).toLocaleString()}원` } } } }
     });
     personChart = new Chart(document.getElementById("personChart"), {
-      type: "doughnut", data: { labels: people, datasets: [{ data: personValues, backgroundColor: ["#6485f5", "#38b89a", "#f5a64a"] }] },
+      type: "doughnut", data: { labels: ranked.map(x => x.person), datasets: [{ data: ranked.map(x => x.total), backgroundColor: ["#6485f5", "#38b89a", "#f5a64a", "#a17af5"] }] },
       options: { maintainAspectRatio: false, plugins: { legend: { position: "bottom" } } }
     });
+    document.getElementById("rankingRows").innerHTML = ranked.map((x, i) =>
+      `<tr><td>${i + 1}위</td><td>${escapeHTML(x.person)}</td><td class="amount">${x.count.toLocaleString("ko-KR")}건</td><td class="amount">${won(x.total)}</td><td class="amount">${won(x.average)}</td></tr>`
+    ).join("");
     document.getElementById("rows").innerHTML = visible.slice().reverse().map(x =>
       `<tr><td>${escapeHTML(x.date)}</td><td>${escapeHTML(x.person)}</td><td>${escapeHTML(x.id)}</td><td class="amount">${won(x.amount)}</td></tr>`
     ).join("");
-    document.getElementById("status").textContent = `${visible.length.toLocaleString("ko-KR")}건 · 합계 ${won(total)}`;
+    document.getElementById("status").textContent = `${visible.length.toLocaleString("ko-KR")}건 · 총 마진 ${won(total)} · 건당 평균 ${won(average)}`;
   }
   async function loadData() {
     document.getElementById("updated").textContent = "스프레드시트 데이터 불러오는 중…";
